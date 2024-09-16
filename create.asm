@@ -2,36 +2,66 @@
 .STACK 100
 .DATA
     ; Book (10)
-    Whispers    DB "Whispers", 10, "$"
-    Echo        DB "Echo", 10, "$"
-    Locket      DB "Locket", 10, "$"
-    Willow      DB "Willow", 10, "$"
-    Rendezvous  DB "Rendezvous", 10, "$"
-    Crimson     DB "Crimson", 10, "$"
-    Shadows     DB "Shadows", 10, "$"
-    Memories    DB "Memories",10,"$"
-    Serenade    DB "Serenade",10,"$"
-    Dream       DB "Dream",10,"$"
+    Whispers    DB "Whispers", 0AH,0DH, "$"
+    Echo        DB "Echo", 0AH,0DH, "$"
+    Locket      DB "Locket", 0AH,0DH, "$"
+    Willow      DB "Willow", 0AH,0DH, "$"
+    Rendezvous  DB "Rendezvous", 0AH,0DH, "$"
+    Crimson     DB "Crimson", 0AH,0DH, "$"
+    Shadows     DB "Shadows", 0AH,0DH, "$"
+    Memories    DB "Memories", 0AH,0DH, "$"
 
     BOOK DW OFFSET Whispers, OFFSET Echo, OFFSET Locket, OFFSET Willow
-         DW OFFSET Rendezvous, OFFSET Crimson, OFFSET Shadows
-         DW OFFSET Memories, OFFSET Serenade, OFFSET Dream
+         DW OFFSET Rendezvous, OFFSET Crimson, OFFSET Shadows, OFFSET Memories
 
-    CREATE_HEADER DB "CREATE ORDER", 10, "$"
-    ORDER_INPUT_TITLE DB "Enter the option to order a book (1-10): $"
-    INVALID_OPTION DB "Invalid option, please try again.", 10, "$"
+    ;Book Price(Floating number)
+    WhispersP    DD 10.5
+    EchP         DD 25.3
+	LocketP      DD 16.0
+	WillowP      DD 17.9
+	RendezvousP  DD 10.5
+	CrimsonP     DD 12.2
+	ShadowsP     DD 13.0
+	MemoriesP    DD 15.4
 
-    ORDER_INPUT LABEL BYTE
-	MAXN_ORDER_INPUT DB 10
-	ACTN_ORDER_INPUT DB ?
-	INPUTSTR DB 10 DUP("$")
+    Price DD 10.5,25.3,16.0,17.9,10.5,12.2,13.0,15.4
 
-    num1 DB ?
-    num2 DB ?
+    ;Book left quantity
+   	WhispersQ    DW 155
+	EchQ         DW 288
+	LocketQ      DW 123
+	WillowQ      DW 262
+	RendezvousQ  DW 165
+	CrimsonQ     DW 256
+	ShadowsQ     DW 278
+	MemoriesQ    DW 132
+
+LeftQuantity DW 155,288,123,262,165,256,278,132,265,164
+
+
+
+    CREATE_HEADER DB "CREATE ORDER", 0AH,0DH, "$"
+    ORDER_INPUT_TITLE DB "Enter the option to order a book (1-8): $"
+    INVALID_OPTION DB 0AH,0DH,"Invalid option. Please try again. (1-8)", 0AH,0DH, "$"
+    BOOK_QUANTITY_TITLE DB 0AH,0DH,"Enter the quantity to order your book: $"
+    INVALID_QUANTITY DB 0AH,0DH,"Invalid quantity. Please try again. (Quantity must at least be 1)", 0AH,0DH, "$"
+
+    QUANTITY_OFFSET DB ?
+    BOOK_ORDER_QUANTITY DB 8 DUP(0)
+
+    ;output db      "The current date is: "
+    ;date db      "00/00/0000", 0dh, 0ah
+    ;     db      "The current time is: "
+    ;time db      "00:00:00", 0dh, 0ah, '$'
+
+    ;ORDER_INPUT LABEL BYTE
+	;MAXN_ORDER_INPUT DB 10
+	;ACTN_ORDER_INPUT DB ?
+	;INPUTSTR DB 8 DUP("$")
+    QUANTITY_INPUT DB ?
     OPTION DB ?
     TEN DB 10
-    errorMsg db 10,13,"Invalid input! Please enter digits only.$"
-    resultMsg db 10,13,"The combined number is: $"
+    errorMsg db 0AH,0DH, "Invalid option. Please enter valid option (1-8). $"
     NL DB 0AH,0DH, "$"      ; New line character
 
 .CODE
@@ -49,145 +79,116 @@ MAIN PROC
     LEA DX,NL
     INT 21H
 
-    ; Loop through BOOK array and print each string with its number (1-10)
-    MOV CX, 10           ; size of book array
+    ; Loop through BOOK array and print each string with its number (1-8)
+    MOV CX, 8            ; size of book array
     MOV SI, 0            ; Index for BOOK array
+    MOV BX, 1            ; Counter for book numbers (1-8)
 
-BOOK_LIST:
-    ; Print the book name
-    MOV AH, 09H          ; DOS interrupt to print string
-    MOV DX, BOOK[SI]           ; Load the string address into DX
-    INT 21H
+    BOOK_LIST:
+        ; Print the book number
+        MOV DL, BL           ; Load the book number into DL
+        ADD DL, 30H          ; Convert number to ASCII ('1' - '8')
+        MOV AH, 02H          ; DOS interrupt to print character
+        INT 21H
 
-    ADD SI, 2            ; Move to the next pointer (each is 2 bytes)
-LOOP BOOK_LIST
+        ; Print a period and space after the number
+        MOV DL, '.'
+        INT 21H
+        MOV DL, ' '
+        INT 21H
 
-CREATE_ORDER:
-    ; Prompt user to enter a book option
-    MOV AH, 09H
-    LEA DX, ORDER_INPUT_TITLE
-    INT 21H
+        ; Print the book name
+        MOV AH, 09H          ; DOS interrupt to print string
+        MOV DX, BOOK[SI]           ; Load the string address into DX
+        INT 21H
 
-getFirstDigit:
-    MOV AH,01H    ; Read character from input
-    INT 21H
-    SUB AL,30H
-    CMP AL, 0   ; Validate if it's between '0' and '9'
-    JB invalidInput
-    CMP AL, 9
-    JA invalidInput
-    MOV num1, AL  ; Store the first digit in num1
+        ADD SI, 2            ; Move to the next pointer (each is 2 bytes)
+        INC BX               ; Increment book number
+    LOOP BOOK_LIST
 
-    ; Get the second digit
-getSecondDigit:
-    MOV AH,01H    ; Read character from input
-    INT 21H
-    SUB AL, 30H
-    CMP AL, 0AH
-    JE SINGLE_DIGIT
-    CMP AL, 0   ; Validate if it's between '0' and '9'
-    JB invalidInput
-    CMP AL, 9
-    JA invalidInput
-    MOV num2, AL  ; Store the second digit in num2
+    CREATE_ORDER:
+        MOV AH,09H
+        LEA DX,ORDER_INPUT_TITLE
+        INT 21H
 
-    ; Combine the two digits (num1 * 10 + num2)
-    MOV AL, num1
-    MOV AH, 0
-    MOV BL, 10
-    MUL BL         ; Multiply num1 by 10
-    ADD AL, num2   ; Add num2 to form the combined number
-    MOV OPTION,AL
+        ; Prompt user to enter a book option
+        MOV AH, 01H
+        INT 21H
+        SUB AL, 30H
+        MOV OPTION, AL
 
-    JMP CHECK_INPUT_NUM
+        ; Validate the input (should be between 1 and 8)
+        CMP OPTION, 1
+        JL INVALID_OPTION_INPUT
 
-    SINGLE_DIGIT:
-    MOV AL,NUM1
-    MOV OPTION,AL
-    INT 21H
+        CMP OPTION, 8
+        JG INVALID_OPTION_INPUT
 
-    ;MOV AH,0
+        MOV AL, OPTION      ; Move option to AL
+        DEC AL              ; Subtract 1 (since options are 1-based, array is 0-based)
+        MOV AH, 0
+        MOV BX,AX
+        MOV SI, BX          ; Move to SI (index)
+        SHL SI, 1           ; Multiply by 2 to get correct offset (each entry is 2 bytes)
+        
+        MOV DI, 0           ;MOV QUANTITY_OFFSET,DI
+        MOV CX,8
+        FIND_QUANTITY_LABEL:
+            CMP BX,DI
+            JE ORDER_QUANTITY_INPUT
+            INC DI
+        LOOP FIND_QUANTITY_LABEL
 
-    ;DIV TEN
+        MOV AH, 09H         
+        MOV DX, BOOK[SI]    ; Load the address of the selected book              
+        INT 21H
 
-    ;MOV AH,02H
-    ;MOV DL,AH
-    ;ADD DL,30H
-    ;INT 21H
+        JMP FINISH
 
-    ;MOV AH,02H
-    ;MOV DL,AL
-    ;ADD DL,30H
-    ;INT 21H
+    INVALID_OPTION_INPUT:
+        ; Print invalid option message
+        MOV AH, 09H
+        LEA DX, INVALID_OPTION
+        INT 21H
+        JMP CREATE_ORDER     ; Prompt the user to enter the option again        
 
-    
+        JMP FINISH
 
-    jmp finish
-    invalidInput:
-    ; Display error message for invalid input
-    MOV DX, OFFSET errorMsg
-    MOV AH, 09H
-    INT 21H
-    JMP MAIN      ; Restart the program
+    ORDER_QUANTITY_INPUT:
+        MOV AH,09H
+        LEA DX,BOOK_QUANTITY_TITLE
+        INT 21H
 
-    ; Convert the result to ASCII
-    ADD AL, '0'
+        MOV AH,01H
+        INT 21H
+        SUB AL,30H
+        MOV QUANTITY_INPUT,AL
 
-    ; Display the combined number
-    MOV DL, AL
-    MOV AH, 02H   ; Function to print character
-    INT 21H
+        CMP QUANTITY_INPUT,0
+        JLE INVALID_QUANTITY_INPUT
 
-    ;MOV AH,0AH     
-	;LEA DX,ORDER_INPUT
-	;INT 21H
+        CMP QUANTITY_INPUT,9
+        JG INVALID_QUANTITY_INPUT
 
-    CHECK_INPUT_NUM:
-    MOV SI,0
-    MOV CX,10
-        MOV AH,0
-        MOV AL,OPTION
-        CMP AX,BOOK[SI]
-        JE PRINT_BOOK
-        INC SI
-        LOOP CHECK_INPUT_NUM
+        MOV BL,QUANTITY_INPUT
+        MOV BOOK_ORDER_QUANTITY[DI],BL
 
-    ; Get user input
-    ;MOV AH,01H           ; Read a single character
-    ;INT 21H
-    ;SUB AL,30H           ; Convert ASCII input to a numeric value
-    ;MOV INPUT,AL         ; Store the input in INPUT
+        MOV AH,02H
+        MOV DL,BOOK_ORDER_QUANTITY[DI]
+        ADD DL,30H
+        INT 21H
 
-    ; Validate the input (should be between 1 and 10)
-    CMP AL, 1
-    JL INVALID_INPUT     ; If less than 1, go to invalid input
-    CMP AL, 10
-    JG INVALID_INPUT     ; If greater than 10, go to invalid input
+    JMP FINISH
 
-    ; Select book based on input (subtract 1 from input for zero-indexing)
-    DEC AL
-    MOV SI, AX           ; Store the user input in SI for index (multiplied by 2)
-    ADD SI, SI           ; Multiply index by 2 to get the correct offset in BOOK array
+    INVALID_QUANTITY_INPUT:
+        MOV AH,09H
+        LEA DX,INVALID_QUANTITY
+        INT 21H
 
-    PRINT_BOOK:
-    ; Print the selected book
-    MOV BX, BOOK[SI]     ; Load the offset of the selected book
-    MOV DX, BX           ; Load the address into DX for printing
-    MOV AH, 09H          ; DOS interrupt to print the string
-    INT 21H
+        JMP CREATE_ORDER
 
-    JMP FINISH           ; End program
-
-INVALID_INPUT:
-    ; Print invalid option message
-    MOV AH, 09H
-    LEA DX, INVALID_OPTION
-    INT 21H
-    JMP CREATE_ORDER     ; Prompt the user to enter the option again
-
-FINISH:
-    ; Exit program
-    MOV AX, 4C00H
-    INT 21H
+    FINISH:
+        MOV AX, 4C00H
+        INT 21H
 MAIN ENDP
 END MAIN
