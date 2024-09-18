@@ -38,18 +38,21 @@
 
 LeftQuantity DW 155,288,123,262,165,256,278,132
 
-    CREATE_HEADER DB "CREATE ORDER", 0AH,0DH, "$"
+    CREATE_HEADER DB 0AH,0DH,0AH,0DH,"CREATE ORDER", 0AH,0DH, "$"
     BOOK_LIST_HEADER DB 'Available Books:', 0DH, 0AH, '$'
     COLUMN_HEADERS DB 'No. Title           Price(RM)   Left Quantity', 0DH, 0AH, '$'
+    COLUMN_ORDERED_HEADERS DB 0DH, 0AH,'No. Book Order      Order Quantity', 0DH, 0AH, '$'
     BOOK_NO DB 1
     QUANTITY_COLUMN_SPACE DB '       ', '$'
 
-    ORDER_INPUT_TITLE DB 0AH,0DH,"Enter the option to order a book (1-8): $"
+    ORDER_INPUT_TITLE DB 0AH,0DH,"Enter the option to order book (1-8): $"
     INVALID_OPTION DB 0AH,0DH,"Invalid option. Please enter valid option (1-8). ", 0AH,0DH, "$"
-    BOOK_QUANTITY_TITLE DB 0AH,0DH,"Enter the quantity to order your book: $"
-    INVALID_QUANTITY DB 0AH,0DH,"Invalid quantity. Quantity must be at least 1. ", 0AH,0DH, "$"
-    ADD_ORDER_TITLE DB 0AH,0DH,"Any other book to order? (Y/N): $"
-    INVALID_ADD_ORDER DB 0AH,0DH,"Invalid input. You must enter Y/N only. ", 0AH,0DH, "$"
+    BOOK_QUANTITY_TITLE1 DB 0AH,0DH,"Enter the quantity to order or edit order quantity ($"
+    BOOK_QUANTITY_TITLE2 DB "): $"
+    INVALID_QUANTITY DB 0AH,0DH,"Invalid quantity. Please enter 1 or 2 digits number to order or edit order quantity. ", 0AH,0DH, "$"
+    ADD_ORDER_TITLE DB 0AH,0DH,"Any other book to order or edit? (Y/N): $"
+    INVALID_ORDER DB 0AH,0DH,"Invalid input. You must enter Y/N only. ", 0AH,0DH, "$"
+    CONFIRM_ORDER_TITLE DB 0AH,0DH,"Are you sure you want to proceed your order? (Y/N): $"
 
     ;TEMP REGISTERS?
 	TAX DB ?
@@ -68,6 +71,7 @@ LeftQuantity DW 155,288,123,262,165,256,278,132
 
     QUANTITY_OFFSET DB ?
     BOOK_ORDER_QUANTITY DB 8 DUP(0)
+    ORDER_QUANTITY_ARRAY_INDEX DB ?
 
     QUANTITY_INPUT DB ?
     OPTION DB ?
@@ -80,17 +84,6 @@ MAIN PROC
     MOV AX,@DATA
     MOV DS,AX
 
-    ; Print header
-    MOV AH,09H     
-    LEA DX,CREATE_HEADER
-    INT 21H
-
-    ; Print new line
-    MOV AH,09H
-    LEA DX,NL
-    INT 21H
-
-    CALL DISPLAY_BOOK_LIST
     CALL CREATE_ORDER
     
     FINISH:
@@ -113,6 +106,7 @@ DISPLAY_BOOK_LIST PROC
     MOV CX, 8            ; size of book array
     MOV SI, 0            ; Index for BOOK array
     MOV DI,0
+    MOV BOOK_NO,1
 
     BOOK_LIST:
         ; Print the book number
@@ -140,7 +134,6 @@ DISPLAY_BOOK_LIST PROC
         FILD WORD PTR [factor] ; Load factor
         FMUL
         FISTP result          ; Store integer part in result
-
         
         CALL DISPF
 
@@ -149,8 +142,6 @@ DISPLAY_BOOK_LIST PROC
         INT 21H
 
         CALL DISPLAY_QUANTITY
-
-        
 
         MOV AH, 09H          ; print string
         LEA DX, NL
@@ -306,15 +297,39 @@ PRINT_INT PROC
         RET
 PRINT_INT ENDP
 
-    CREATE_ORDER PROC
-        CREATE_ORDER_START:
-            CALL GET_BOOK_OPTION
-            CALL GET_QUANTITY
-            CALL ASK_ADD_ORDER
-            CMP AL, 'Y'
-            JE CREATE_ORDER_START
-            CMP AL, 'y'
-            JE CREATE_ORDER_START
+CREATE_ORDER PROC
+    CREATE_ORDER_START:
+        ; Print header
+        MOV AH,09H     
+        LEA DX,CREATE_HEADER
+        INT 21H
+
+        ; Print new line
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        CALL DISPLAY_BOOK_LIST
+        CALL GET_BOOK_OPTION
+        CALL GET_QUANTITY
+        CALL ASK_ADD_ORDER
+        CMP AL, 'Y'
+        JE CREATE_ORDER_START
+        CMP AL, 'y'
+        JE CREATE_ORDER_START
+
+        MOV AH,09H
+        LEA DX, NL
+        INT 21H
+
+        CALL DISPLAY_ORDER
+        CALL CONFIRM_ORDER
+
+        ;CMP AL, 'Y'
+        ;JE PAYMENT FUNCTION
+        ;CMP AL, 'y'
+        ;JE PAYMENT FUNCTION
+        
     RET
 CREATE_ORDER ENDP
 
@@ -340,6 +355,7 @@ GET_BOOK_OPTION PROC
     MOV AH, 0
     MOV BX,AX
     MOV SI, BX          ; Move to SI (index)
+    MOV ORDER_QUANTITY_ARRAY_INDEX, BL
     SHL SI, 1           ; Multiply by 2 to get correct offset (each entry is 2 bytes)
     
     MOV DI, 0           ;MOV QUANTITY_OFFSET,DI
@@ -350,25 +366,28 @@ GET_BOOK_OPTION PROC
         INC DI
     LOOP FIND_QUANTITY_LABEL
 
-    MOV AH, 09H         
-    MOV DX, BOOK[SI]    ; Load the address of the selected book              
-    INT 21H
-    JMP GET_BOOK_OPTION_END
+    INVALID_OPTION_INPUT:
+        ; Print invalid option message
+        MOV AH, 09H
+        LEA DX, INVALID_OPTION
+        INT 21H
+        JMP GET_BOOK_OPTION
 
-INVALID_OPTION_INPUT:
-    ; Print invalid option message
-    MOV AH, 09H
-    LEA DX, INVALID_OPTION
-    INT 21H
-    JMP GET_BOOK_OPTION
-
-GET_BOOK_OPTION_END:
-    RET
+    GET_BOOK_OPTION_END:
+        RET
 GET_BOOK_OPTION ENDP
 
 GET_QUANTITY PROC
     MOV AH,09H
-    LEA DX,BOOK_QUANTITY_TITLE
+    LEA DX,BOOK_QUANTITY_TITLE1
+    INT 21H
+
+    MOV AH,09H
+    MOV DX,BOOK[SI]
+    INT 21H
+
+    MOV AH,09H
+    LEA DX,BOOK_QUANTITY_TITLE2
     INT 21H
 
     MOV AH,01H
@@ -377,7 +396,7 @@ GET_QUANTITY PROC
     MOV QUANTITY_INPUT,AL
 
     CMP QUANTITY_INPUT,0
-    JLE INVALID_QUANTITY_INPUT
+    JL INVALID_QUANTITY_INPUT
 
     CMP QUANTITY_INPUT,9
     JG INVALID_QUANTITY_INPUT
@@ -403,19 +422,22 @@ GET_QUANTITY PROC
     ADD AL, BL   ; previous value + new value ( after previous value is multiplyed with 10 )
     MOV QUANTITY_INPUT, AL
     
-KEY_IN_QUANTITY_LABEL:
-    MOV BL,QUANTITY_INPUT
-    MOV BOOK_ORDER_QUANTITY[DI],BL
-    JMP GET_QUANTITY_END
+    KEY_IN_QUANTITY_LABEL:
+        MOV AX,0
+        MOV AL,ORDER_QUANTITY_ARRAY_INDEX
+        MOV BL,QUANTITY_INPUT
+        MOV DI,AX
+        MOV BOOK_ORDER_QUANTITY[DI],BL
+        JMP GET_QUANTITY_END
 
-INVALID_QUANTITY_INPUT:
-    MOV AH,09H
-    LEA DX,INVALID_QUANTITY
-    INT 21H
-    JMP GET_QUANTITY
+    INVALID_QUANTITY_INPUT:
+        MOV AH,09H
+        LEA DX,INVALID_QUANTITY
+        INT 21H
+        JMP GET_QUANTITY
 
-GET_QUANTITY_END:
-    RET
+    GET_QUANTITY_END:
+        RET
 GET_QUANTITY ENDP
 
 ASK_ADD_ORDER PROC
@@ -437,12 +459,97 @@ ASK_ADD_ORDER PROC
 
     ; If invalid input
     MOV AH,09H
-    LEA DX,INVALID_ADD_ORDER
+    LEA DX,INVALID_ORDER
     INT 21H
     JMP ASK_ADD_ORDER
 
-ASK_ADD_ORDER_END:
-    RET
+    ASK_ADD_ORDER_END:
+        RET
 ASK_ADD_ORDER ENDP
+
+DISPLAY_ORDER PROC
+    MOV AH,09H
+    LEA DX, COLUMN_ORDERED_HEADERS
+    INT 21H
+
+    MOV CX,8
+    MOV SI,0
+    MOV DI,0
+    MOV BOOK_NO,1
+    DISPLAY_ORDER_LABEL:
+
+        CMP BOOK_ORDER_QUANTITY[DI],0
+        JE NEXT
+
+        MOV AH,02H
+        MOV DL,BOOK_NO
+        ADD DL,30H
+        INT 21H
+
+        INC BOOK_NO
+        ; Print a period and space after the number
+        MOV DL, '.'
+        INT 21H
+        MOV DL, ' '
+        INT 21H
+        MOV DL, ' '
+        INT 21H 
+
+        MOV AH,09H
+        MOV DX,BOOK[SI]
+        INT 21H
+
+        MOV AX,0
+        MOV AL,BOOK_ORDER_QUANTITY[DI]
+        DIV TEN
+        MOV BX,AX
+
+        MOV AH,02H
+        MOV DL,BL
+        ADD DL,30H
+        INT 21H
+
+        MOV AH,02H
+        MOV DL,BH
+        ADD DL,30H
+        INT 21H
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        NEXT:
+            ADD SI,2
+            INC DI
+    LOOP DISPLAY_ORDER_LABEL
+DISPLAY_ORDER ENDP
+
+CONFIRM_ORDER PROC
+    MOV AH,09H
+    LEA DX, CONFIRM_ORDER_TITLE
+    INT 21H
+
+    MOV AH,01H
+    INT 21H
+    
+    CMP AL,'Y'
+    JE CONFIRM_ORDER_END
+    CMP AL,'y'
+    JE CONFIRM_ORDER_END
+    CMP AL,'N'
+    JE CONFIRM_ORDER_END
+    CMP AL,'n'
+    JE CORNFIRM_ORDER_END
+
+    ; If invalid input
+    MOV AH,09H
+    LEA DX,INVALID_ORDER
+    INT 21H
+    JMP CONFIRM_ORDER
+    
+    CONFIRM_ORDER_END
+        RET
+CONFIRM_ORDER ENDP
+
 
 END MAIN
