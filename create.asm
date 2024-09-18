@@ -50,6 +50,7 @@ LeftQuantity DW 155,288,123,262,165,256,278,132
     BOOK_QUANTITY_TITLE1 DB 0AH,0DH,"Enter the quantity to order or edit order quantity ($"
     BOOK_QUANTITY_TITLE2 DB "): $"
     INVALID_QUANTITY DB 0AH,0DH,"Invalid quantity. Please enter 1 or 2 digits number to order or edit order quantity. ", 0AH,0DH, "$"
+    QUANTITY_LARGER DB 0AH,0DH,"The quantity is larger than stock quantity. Please enter again. ", 0AH,0DH, "$"
     ADD_ORDER_TITLE DB 0AH,0DH,"Any other book to order or edit? (Y/N): $"
     INVALID_ORDER DB 0AH,0DH,"Invalid input. You must enter Y/N only. ", 0AH,0DH, "$"
     CONFIRM_ORDER_TITLE DB 0AH,0DH,"Are you sure you want to proceed order? (Y/N): $"
@@ -421,6 +422,11 @@ GET_QUANTITY PROC
     MOV QUANTITY_INPUT, AL
     
     KEY_IN_QUANTITY_LABEL:
+        MOV BX,0
+        MOV BL,QUANTITY_INPUT
+        CMP BX, LeftQuantity[SI]
+        JG QUANTITY_LARGER_LABEL
+
         MOV AX,0
         MOV AL,ORDER_QUANTITY_ARRAY_INDEX
         MOV BL,QUANTITY_INPUT
@@ -431,6 +437,12 @@ GET_QUANTITY PROC
     INVALID_QUANTITY_INPUT:
         MOV AH,09H
         LEA DX,INVALID_QUANTITY
+        INT 21H
+        JMP GET_QUANTITY
+
+    QUANTITY_LARGER_LABEL:
+        MOV AH,09H
+        LEA DX,QUANTITY_LARGER
         INT 21H
         JMP GET_QUANTITY
 
