@@ -52,7 +52,7 @@ LeftQuantity DW 155,288,123,262,165,256,278,132
     INVALID_QUANTITY DB 0AH,0DH,"Invalid quantity. Please enter 1 or 2 digits number to order or edit order quantity. ", 0AH,0DH, "$"
     ADD_ORDER_TITLE DB 0AH,0DH,"Any other book to order or edit? (Y/N): $"
     INVALID_ORDER DB 0AH,0DH,"Invalid input. You must enter Y/N only. ", 0AH,0DH, "$"
-    CONFIRM_ORDER_TITLE DB 0AH,0DH,"Are you sure you want to proceed your order? (Y/N): $"
+    CONFIRM_ORDER_TITLE DB 0AH,0DH,"Are you sure you want to proceed order? (Y/N): $"
 
     ;TEMP REGISTERS?
 	TAX DB ?
@@ -66,8 +66,6 @@ LeftQuantity DW 155,288,123,262,165,256,278,132
     ;floating point display data
     factor DW 10       ; Scaling factor for displaying
 	result DW 0       ; Define the result variable as a 16-bit word
-
-    
 
     QUANTITY_OFFSET DB ?
     BOOK_ORDER_QUANTITY DB 8 DUP(0)
@@ -90,6 +88,42 @@ MAIN PROC
         MOV AX, 4C00H
         INT 21H
 MAIN ENDP
+
+CREATE_ORDER PROC
+    CREATE_ORDER_START:
+        ; Print header
+        MOV AH,09H     
+        LEA DX,CREATE_HEADER
+        INT 21H
+
+        ; Print new line
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        CALL DISPLAY_BOOK_LIST
+        CALL GET_BOOK_OPTION
+        CALL GET_QUANTITY
+        CALL ASK_ADD_ORDER
+        CMP AL, 'Y'
+        JE CREATE_ORDER_START
+        CMP AL, 'y'
+        JE CREATE_ORDER_START
+
+        MOV AH,09H
+        LEA DX, NL
+        INT 21H
+
+        CALL DISPLAY_ORDER
+        CALL CONFIRM_ORDER
+
+        ;CMP AL, 'Y'
+        ;JE PAYMENT FUNCTION
+        ;CMP AL, 'y'
+        ;JE PAYMENT FUNCTION
+        
+    RET
+CREATE_ORDER ENDP
 
 DISPLAY_BOOK_LIST PROC
     ; Print header
@@ -297,42 +331,6 @@ PRINT_INT PROC
         RET
 PRINT_INT ENDP
 
-CREATE_ORDER PROC
-    CREATE_ORDER_START:
-        ; Print header
-        MOV AH,09H     
-        LEA DX,CREATE_HEADER
-        INT 21H
-
-        ; Print new line
-        MOV AH,09H
-        LEA DX,NL
-        INT 21H
-
-        CALL DISPLAY_BOOK_LIST
-        CALL GET_BOOK_OPTION
-        CALL GET_QUANTITY
-        CALL ASK_ADD_ORDER
-        CMP AL, 'Y'
-        JE CREATE_ORDER_START
-        CMP AL, 'y'
-        JE CREATE_ORDER_START
-
-        MOV AH,09H
-        LEA DX, NL
-        INT 21H
-
-        CALL DISPLAY_ORDER
-        CALL CONFIRM_ORDER
-
-        ;CMP AL, 'Y'
-        ;JE PAYMENT FUNCTION
-        ;CMP AL, 'y'
-        ;JE PAYMENT FUNCTION
-        
-    RET
-CREATE_ORDER ENDP
-
 GET_BOOK_OPTION PROC
     MOV AH,09H
     LEA DX,ORDER_INPUT_TITLE
@@ -522,6 +520,7 @@ DISPLAY_ORDER PROC
             ADD SI,2
             INC DI
     LOOP DISPLAY_ORDER_LABEL
+    RET
 DISPLAY_ORDER ENDP
 
 CONFIRM_ORDER PROC
