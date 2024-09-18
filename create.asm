@@ -2,14 +2,14 @@
 .STACK 100
 .DATA
     ; Book (8)
-    Whispers    DB "Whispers$"
-    Echo        DB "Echo$"
-    Locket      DB "Locket$"
-    Willow      DB "Willow$"
-    Rendezvous  DB "Rendezvous$"
-    Crimson     DB "Crimson$"
-    Shadows     DB "Shadows$"
-    Memories    DB "Memories$"
+    Whispers    DB "Whispers        $"
+    Echo        DB "Echo            $"
+    Locket      DB "Locket          $"
+    Willow      DB "Willow          $"
+    Rendezvous  DB "Rendezvous      $"
+    Crimson     DB "Crimson         $"
+    Shadows     DB "Shadows         $"
+    Memories    DB "Memories        $"
 
     BOOK DW OFFSET Whispers, OFFSET Echo, OFFSET Locket, OFFSET Willow
          DW OFFSET Rendezvous, OFFSET Crimson, OFFSET Shadows, OFFSET Memories
@@ -42,8 +42,7 @@ LeftQuantity DW 155,288,123,262,165,256,278,132
     BOOK_LIST_HEADER DB 'Available Books:', 0DH, 0AH, '$'
     COLUMN_HEADERS DB 'No. Title           Price(RM)   Left Quantity', 0DH, 0AH, '$'
     BOOK_NO DB 1
-    PRICE_COLUMN_SPACE DB '          ', '$'
-    QUANTITY_COLUMN_SPACE DB '    ', '$'
+    QUANTITY_COLUMN_SPACE DB '       ', '$'
 
     ORDER_INPUT_TITLE DB 0AH,0DH,"Enter the option to order a book (1-8): $"
     INVALID_OPTION DB 0AH,0DH,"Invalid option. Please enter valid option (1-8). ", 0AH,0DH, "$"
@@ -64,6 +63,8 @@ LeftQuantity DW 155,288,123,262,165,256,278,132
     ;floating point display data
     factor DW 10       ; Scaling factor for displaying
 	result DW 0       ; Define the result variable as a 16-bit word
+
+    
 
     QUANTITY_OFFSET DB ?
     BOOK_ORDER_QUANTITY DB 8 DUP(0)
@@ -111,7 +112,7 @@ DISPLAY_BOOK_LIST PROC
     ; Loop through BOOK array and print each string with its number (1-8)
     MOV CX, 8            ; size of book array
     MOV SI, 0            ; Index for BOOK array
-   
+    MOV DI,0
 
     BOOK_LIST:
         ; Print the book number
@@ -134,12 +135,14 @@ DISPLAY_BOOK_LIST PROC
         MOV AH, 09H          ; print string
         MOV DX, BOOK[SI]     ; Load the string address into DX
         INT 21H
-
-        MOV AH, 09H          ; print string
-        LEA DX, PRICE_COLUMN_SPACE
-        INT 21H
         
-        ;CALL PRINT_FLOAT
+        FLD DWORD PTR [PRICE[DI]]  ; Load num1 into the FPU stack
+        FILD WORD PTR [factor] ; Load factor
+        FMUL
+        FISTP result          ; Store integer part in result
+
+        
+        CALL DISPF
 
         MOV AH, 09H          ; print string
         LEA DX, QUANTITY_COLUMN_SPACE
@@ -154,9 +157,116 @@ DISPLAY_BOOK_LIST PROC
         INT 21H
 
         ADD SI, 2            ; Move to the next pointer (each is 2 bytes)
+        ADD DI,4
     LOOP BOOK_LIST
     RET
 DISPLAY_BOOK_LIST ENDP
+
+DISPF PROC
+    ; Preserve registers
+    PUSH AX
+    PUSH BX
+    PUSH CX
+    PUSH DX
+    PUSH DI
+    PUSH SI
+
+    ; Load the value of 'result' into AX (assuming result is 16-bit)
+    MOV AX, result       ; AX now holds the value, e.g., 15000
+
+    ; Division by 10000 to extract the ten-thousands place
+    MOV CX, 10000         ; Divisor for ten-thousands
+    XOR DX, DX            ; Clear DX to avoid overflow
+    DIV CX                ; AX = AX / 10000, DX = remainder
+    MOV TAX, AL         ; Store the ten-thousands digit in TAX
+    MOV AX, DX            ; AX now holds the remainder
+
+    ; Division by 1000 to extract the thousands place
+    MOV CX, 1000          ; Divisor for thousands
+    XOR DX, DX            ; Clear DX
+    DIV CX                ; AX = AX / 1000, DX = remainder
+    MOV TBX, AL         ; Store the thousands digit in TBX
+    MOV AX, DX            ; AX now holds the remainder
+
+    ; Division by 100 to extract the hundreds place
+    MOV CX, 100           ; Divisor for hundreds
+    XOR DX, DX            ; Clear DX
+    DIV CX                ; AX = AX / 100, DX = remainder
+    MOV TCX, AL         ; Store the hundreds digit in TCX
+    MOV AX, DX            ; AX now holds the remainder
+
+    ; Division by 10 to extract the tens place
+    MOV CX, 10            ; Divisor for tens
+    XOR DX, DX            ; Clear DX
+    DIV CX                ; AX = AX / 10, DX = remainder
+    MOV TDX, AL         ; Store the tens digit in TDX
+    MOV TAA, DL         ; Store the remainder (units place) in TSI
+
+    ; Print the ten-thousands digit (if it's not zero)
+    CMP TAX, 0
+    JZ SkipTenThousands   ; If the ten-thousands digit is 0, skip it
+    MOV AL, TAX         ; Load the ten-thousands digit
+    ADD AL, '0'           ; Convert to ASCII
+    MOV AH, 02H
+    MOV DL, AL
+    INT 21H               ; Print the character
+
+SkipTenThousands:
+
+    ; Print the thousands digit
+    CMP TBX, 0
+    JZ SkipThousands      ; If the thousands digit is 0, skip it (after 10000 case)
+    MOV AL, TBX         ; Load the thousands digit
+    ADD AL, '0'           ; Convert to ASCII
+    MOV AH, 02H
+    MOV DL, AL
+    INT 21H               ; Print the character
+
+SkipThousands:
+
+    ; Print the hundreds digit
+    CMP TCX, 0
+    JZ SkipHundreds       ; If the hundreds digit is 0, skip it (after 1000 case)
+    MOV AL, TCX         ; Load the hundreds digit
+    ADD AL, '0'           ; Convert to ASCII
+    MOV AH, 02H
+    MOV DL, AL
+    INT 21H               ; Print the character
+
+SkipHundreds:
+
+    ; Print the tens digit
+    MOV AL, TDX         ; Load the tens digit
+    ADD AL, '0'           ; Convert to ASCII
+    MOV AH, 02H
+    MOV DL, AL
+    INT 21H               ; Print the character
+
+	;Print the decimal point (for floating-point representation, if needed)
+    MOV AH, 02H
+    MOV DL, '.'
+    INT 21H
+
+    ; Print the units digit
+    MOV AL, TAA         ; Load the units digit
+    ADD AL, '0'           ; Convert to ASCII
+    MOV AH, 02H
+    MOV DL, AL
+    INT 21H               ; Print the character
+
+	MOV AH,02H
+	MOV DL,'0'
+	INT 21H
+
+    ; Restore registers
+    POP SI
+    POP DI
+    POP DX
+    POP CX
+    POP BX
+    POP AX
+    RET
+DISPF ENDP
 
 DISPLAY_QUANTITY PROC
     ; Display left quantity
