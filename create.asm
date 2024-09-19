@@ -118,10 +118,27 @@ CREATE_ORDER PROC
         CALL DISPLAY_ORDER
         CALL CONFIRM_ORDER
 
+        CMP AL, 'N'
+        JE RESET_BOOK_QUANTITY
+        CMP AL, 'n'
+        JE RESET_BOOK_QUANTITY
+
         ;CMP AL, 'Y'
         ;JE PAYMENT FUNCTION
         ;CMP AL, 'y'
         ;JE PAYMENT FUNCTION
+
+        RESET_BOOK_QUANTITY:
+
+            MOV SI,0
+            MOV CX,8
+            RESET_LOOP:
+                MOV BOOK_ORDER_QUANTITY[SI], 0        ; Set the quantity to 0
+                MOV AL,BOOK_ORDER_QUANTITY[SI]
+                INC SI                                ; Move to the next book
+
+            LOOP RESET_LOOP 
+
         
     RET
 CREATE_ORDER ENDP
