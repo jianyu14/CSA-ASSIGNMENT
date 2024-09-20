@@ -63,7 +63,7 @@
 
 
 ;Create Order Data
-    CREATE_HEADER DB "CREATE ORDER", 0AH,0DH, "$"
+    CREATE_HEADER DB 0AH,0DH,"                                  CREATE ORDER", 0AH,0DH, "$"
     COLUMN_HEADERS DB 'No. Title           Price(RM)   Left Quantity', 0DH, 0AH, '$'
     COLUMN_ORDERED_HEADERS DB 'No. Book Order      Order Quantity', 0DH, 0AH, '$'
     BOOK_NO DB 1
@@ -99,20 +99,21 @@
 	ADDRESS_EACH_AMOUNT DW ?
 
 	;General Display DATA
+    PAYMENT_MAIN_HEADER DB 0AH,0DH,"                                  PAYMENT", 0AH,0DH, "$"
 	NL DB 0AH,0DH,"$"
 	PAYMENT_METHOD_MESSAGE DB "Payment Method$"
-	RM DB "RM $"
-	PROMPOPT DB "       Enter your selection: $"
-	PAID_AMOUNT DB "Paid Amount: $"
-	CHANGE_AMOUNT DB "Change Amount : $"
+	;RM DB "RM $"
+	PROMPOPT DB 0AH,0DH,"Enter your selection: $"
+	PAID_AMOUNT DB 0AH,0DH,"Paid Amount (RM)        : $"
+	CHANGE_AMOUNT DB 0AH,0DH,"Change Amount (RM)      : $"
 	PINVALID DB "Invalid Input!!!$"
 	PINSUFFICIENT DB "Insufficient Amount!!!$"
 	ORDER_CONFIRMATION_MESSAGE DB "Confirm to Place Order?$"
 	ORDER_CONFIRM DB "Confirm$"
 	ORDER_CANCEL_MESSAGE DB "Payment cancelled.$"
 	ORDER_CONFIRM_MESSAGE DB "Payment has made successfully!!!$"
-	QUIT DB "2.  Quit$"
 	ENTAGN DB "1.  Enter again$"
+    CANCEL_PAYMENT_MESSAGE DB "2.  Cancel Payment$"
 	DOT DB ".  $"
 	PRINT_MIDDLE DB "			   	    $"
 	TAB DB "             $"
@@ -122,11 +123,11 @@
 	TOTALP DD 10 DUP(0.0)
 	PAYMENT_SELECTION_ONE DB ?
 	PAYMENT_SELECTION_TWO DB ?
-	TOTAL_AMOUNT_MESSAGE DB "GRAND TOTAL AMOUNT (RM) : $"
+	TOTAL_AMOUNT_MESSAGE DB "Grand Total Amount (RM) : $"
     TOTAL_AMOUNT_SPACE DB "                          $"
-	PROMPTPAY DB "	ENTER AMOUNT PAID : $"
+	PROMPTPAY DB "	Enter Amount Paid (RM) : $"
     PAYMENT_HEADER DB 'No. Title           Price(RM)   Quantity    Total Amount(RM)', 0DH, 0AH, '$'
-	;BuyQuantity DW 10 DUP(0)
+	GRAND_TOTAL_AMOUNT_PREFIX DB "                           $"
 
 	;ITERATTION COUNT
 	COUNT_PAYMENT_MADE DW 0
@@ -145,24 +146,24 @@
 
 ;Payment Link to Report Data
     ;Book sold quantity
-    SoldQuantity DW 10 DUP(0)
+    SoldQuantity DW 10 DUP(00)
 ;;;;;
 
 
 ;Report Data
-    REPORTMENU DB "REPORT MENU$"
+    REPORTMENU DB "                                  REPORT MENU",0AH,0DH,"$"
     OPTION_TOTAL_SALES DB "1. View Total Sales Report$"
     OPTION_INVENTORY DB "2. View Inventory Report$"
     OPTION_RETURN DB "3. Return Main Menu$"
     PROMPTMSG DB "Enter Choice (1-3): $"
     REPORTCHOICE DB ?
     INAVLIDMSG DB "Invalid Choice, Try Again.$"
-    TOTAL_SALES_TITLE DB "          TOTAL SALES REPORT$"
-    INVENTORY_TITLE DB "            INVENTORY REPORT$"
+    TOTAL_SALES_TITLE DB 0AH,0DH,"                              TOTAL SALES REPORT",0AH,0DH,"$"
+    INVENTORY_TITLE DB 0AH,0DH,"                                INVENTORY REPORT",0AH,0DH,"$"
     BUFFER      DB 6 DUP (?)  ; Buffer to store the ASCII digits
-    SALESRPT_HEADER DB "Title         Price(RM)      Sold Quantity     Total(RM)$"
-    INVENTORYRPT_HEADER DB "Title         Stock Quantity$"
-    SPACE_PREFIX DB "              $"
+    SALESRPT_HEADER DB "No. Title         Price(RM)      Sold Quantity     Total(RM)$"
+    INVENTORYRPT_HEADER DB "No. Title           Stock Quantity$"
+    SPACE_PREFIX DB "             $"
 ;;;;;
 
 
@@ -172,20 +173,23 @@
     HUNDRED DB 100
     THOUSAND DW 1000
 	TEN_THOUSAND DW 10000
+
+    MAIN_MENU_HEADER DB "                                   MAIN MENU",0AH,0DH,"$"
 ;;;;;
 
 
 ;User Login Data
 	;Account
-	USERNAME DB "LegoGuy$"
+	USERNAME DB "TARUMT$"
 	PASS DB "1234$"
 	PASSLENGTH DB 4
 
     ;Message and User Input
+    LOGIN_PAGE_HEADER DB "                                   LOGIN PAGE",0AH,0DH,"$"
 	INV DB "Invalid Username or Password!!!$"   
 	SUC DB "LOGIN SUCCESSFULLY!$"
 	PROMPPASS DB "Enter password: $"
-	PTITLE DB "Book Lego Guy Book POS$"
+	PTITLE DB "                             TARUMT Book Store POS",0AH,0DH,"$"
 	PROMPUSN DB "Enter username: $"
 
     ;User Name Input String
@@ -204,10 +208,13 @@
 
 
 ;Temporary Main Menu Display Data and Selection for Testing Purposes
-    MAIN_MENU_MESSAGE DB "CHOOSE FUNCTION:  $"
-    CREATE_ORDER_FUNTION_SELECTION DB "1.  CREATE ORDER$"
-    REPORT_FUNCTION_SELECTION DB "2.  VIEW REPORT$"
+    MAIN_MENU_MESSAGE DB "Choose Function:  $"
+    SEARCH_BOOK_FUNCTION_SELECTION DB "1.  SEARCH BOOK$"
+    CREATE_ORDER_FUNTION_SELECTION DB "2.  CREATE ORDER$"
+    REPORT_FUNCTION_SELECTION DB "3.  VIEW REPORT$"
+    QUIT_MAIN_MENU_SELECTION DB "4.  QUIT$"
     MAIN_MENU_SELECTION DB ?
+    MAIN_MENU_INVALID_MESSAGE DB 0AH,0DH,"INVALID INPUT, INPUT AGAIN!!!",0AH,0DH,"$"
 ;;;;;
 
 
@@ -229,6 +236,12 @@ MAIN PROC
     INT 21H
     LEA DX,NL   
     INT 21H
+    LEA DX,MAIN_MENU_HEADER
+    INT 21H
+    LEA DX,NL   
+    INT 21H
+    LEA DX,SEARCH_BOOK_FUNCTION_SELECTION
+    INT 21H 
     LEA DX,NL   
     INT 21H
     LEA DX,CREATE_ORDER_FUNTION_SELECTION
@@ -239,8 +252,14 @@ MAIN PROC
     INT 21H  
     LEA DX,NL  
     INT 21H  
+    LEA DX,QUIT_MAIN_MENU_SELECTION
+    INT 21H
+    LEA DX,NL  
+    INT 21H 
     LEA DX,MAIN_MENU_MESSAGE
     INT 21H  
+
+
 
     MOV AH,01H
     INT 21H  
@@ -250,20 +269,34 @@ MAIN PROC
     CMP MAIN_MENU_SELECTION,'1'
     JNE CHECK_NEXT
     ;CREATE ORDER FUNCTION
+    ;CALL       ;CALL SEARCH FUNCTION IN HERE
+    JMP MAIN_AGAIN
+
+    CHECK_NEXT:
+    CMP MAIN_MENU_SELECTION,'2'
+    JNE CHECK_NEXT_TWO
+    ;CREATE ORDER FUNCTION
     CALL CREATE_ORDER_FUNCTION_MAIN      ;CALL PAYMENT FUNCTION IN HERE
     JMP MAIN_AGAIN
 
 
-    CHECK_NEXT:
-    CMP MAIN_MENU_SELECTION,'2'
+    CHECK_NEXT_TWO:
+    CMP MAIN_MENU_SELECTION,'3'
     JNE QUIT_MAIN
     ;REPORT FUNCTION
     CALL REPORT_FUNCTION_MAIN
 
 
     QUIT_MAIN:
-    CMP MAIN_MENU_SELECTION,'3'
-    JNE MAIN_AGAIN
+    CMP MAIN_MENU_SELECTION,'4'
+    JNE MAIN_MENU_INVALID
+    JMP EXIT_WHOLE_FUNCTION
+
+    MAIN_MENU_INVALID:
+        MOV AH,09H
+        LEA DX,MAIN_MENU_INVALID_MESSAGE
+        INT 21H  
+        JMP MAIN_AGAIN
 
     EXIT_WHOLE_FUNCTION:
 
@@ -280,14 +313,15 @@ MAIN ENDP
             MOV AH,09H
             LEA DX,NL
             INT 21H
-
             LEA DX,PTITLE
+            INT 21H
+            LEA DX,NL
+            INT 21H
+            LEA DX,LOGIN_PAGE_HEADER
             INT 21H
 
         LOGIN:
             MOV AH,09H
-            LEA DX,NL
-            INT 21H
             LEA DX,NL
             INT 21H
 
@@ -374,7 +408,7 @@ MAIN ENDP
                 
                 ;Quit?
                 MOV AH,09H
-                LEA DX,QUIT
+                LEA DX,CANCEL_PAYMENT_MESSAGE
                 INT 21H
                 
                 LEA DX,NL
@@ -417,8 +451,6 @@ MAIN ENDP
             MOV AH,09H   
             LEA DX,NL
             INT 21H  
-            LEA DX,PRINT_MIDDLE
-            INT 21H
             LEA DX,CREATE_HEADER
             INT 21H
 
@@ -830,6 +862,8 @@ MAIN ENDP
             MOV AH,09H	
             LEA DX,NL
             INT 21H	
+            LEA DX,PAYMENT_MAIN_HEADER
+            INT 21H
             LEA DX,NL
             INT 21H
 
@@ -994,7 +1028,7 @@ MAIN ENDP
         FINIT
 
         MOV AH,09H 
-        LEA DX,TOTAL_AMOUNT_SPACE
+        LEA DX,GRAND_TOTAL_AMOUNT_PREFIX
         INT 21H
         LEA DX,TOTAL_AMOUNT_MESSAGE
         INT 21H
@@ -1261,7 +1295,7 @@ MAIN ENDP
             
             ;Quit?
             MOV AH,09H
-            LEA DX,QUIT
+            LEA DX,CANCEL_PAYMENT_MESSAGE
             INT 21H
             
             LEA DX,NL
@@ -1371,8 +1405,6 @@ MAIN ENDP
         INT 21H
         LEA DX, PROMPTPAY
         INT 21H
-        LEA DX,RM
-        INT 21H
 
         ; Initialize registers and variables
         XOR AX, AX              ; Clear AX (this will hold the final value)
@@ -1458,7 +1490,7 @@ MAIN ENDP
             
             ;Quit?
             MOV AH,09H
-            LEA DX,QUIT
+            LEA DX,CANCEL_PAYMENT_MESSAGE
             INT 21H
             
             LEA DX,NL
@@ -1509,8 +1541,6 @@ MAIN ENDP
         LEA DX,NL  
         INT 21H
         LEA DX,PAID_AMOUNT
-        INT 21H
-        LEA DX,RM
         INT 21H
 
         MOV AX,TDI
@@ -1579,7 +1609,7 @@ MAIN ENDP
             
             ;Quit?
             MOV AH,09H
-            LEA DX,QUIT
+            LEA DX,CANCEL_PAYMENT_MESSAGE
             INT 21H
             
             LEA DX,NL
@@ -1609,12 +1639,8 @@ MAIN ENDP
             MOV AH,09H
             LEA DX,NL
             INT 21H
-            LEA DX,NL
-            INT 21H
 
             LEA DX,CHANGE_AMOUNT
-            INT 21H
-            LEA DX,RM
             INT 21H
 
             FLD DWORD PTR [TOTALAMOUNT]
@@ -1748,7 +1774,7 @@ MAIN ENDP
             
         ;Quit?
         MOV AH,09H	
-        LEA DX,QUIT
+        LEA DX,CANCEL_PAYMENT_MESSAGE
         INT 21H
             
         LEA DX,NL
@@ -1791,7 +1817,7 @@ MAIN ENDP
             
             ;Quit?
             MOV AH,09H
-            LEA DX,QUIT
+            LEA DX,CANCEL_PAYMENT_MESSAGE
             INT 21H
             
             LEA DX,NL
@@ -2023,8 +2049,22 @@ MAIN ENDP
         MOV CX, 8
         XOR SI, SI        ; Initialize loop counter for 8 books
         MOV DI, 0
+        MOV BOOK_NO,1
 
     NEXT_BOOK:
+
+        ;Display Number
+            MOV AH, 02H          ; DOS interrupt to print character
+            MOV DL, BOOK_NO           ; Load the book number into DL
+            ADD DL, 30H          ; Convert number to ASCII (1 - 8)
+            INT 21H
+
+            INC BOOK_NO
+            ; Print a period and space after the number
+            MOV AH,09H
+            LEA DX,DOT
+            INT 21H
+
         ; Access the book name address by loading from BookNames array
         MOV BX, [BOOK + SI]  ; Load address of the book name into BX
         MOV AH, 09H
@@ -2065,9 +2105,9 @@ MAIN ENDP
         CALL CALCULATE_TOTAL_PRICE
 
         ; Display New Line
-        MOV AH, 09H
-        LEA DX, NL
-        INT 21H
+        ;MOV AH, 09H
+        ;LEA DX, NL
+        ;INT 21H
 
         ; Increment SI by 2 to point to the next word (since addresses are word-sized)
         ADD SI, 2
@@ -2130,11 +2170,6 @@ MAIN ENDP
         LEA DX,NL
         INT 21H
 
-        ;TO DISPLAY NEW LINE
-        MOV AH,09H
-        LEA DX,NL
-        INT 21H
-
         MOV AH,09H
         LEA DX,INVENTORY_TITLE
         INT 21H
@@ -2156,8 +2191,23 @@ MAIN ENDP
         ; Set up loop counter for 8 books
         MOV CX, 8
         XOR SI, SI        ; Initialize loop counter for 8 books
+        MOV BOOK_NO,1
 
     NEXT_BOOK2:
+
+        ;Display Number
+            MOV AH, 02H          ; DOS interrupt to print character
+            MOV DL, BOOK_NO           ; Load the book number into DL
+            ADD DL, 30H          ; Convert number to ASCII (1 - 8)
+            INT 21H
+
+            INC BOOK_NO
+            ; Print a period and space after the number
+            MOV AH,09H
+            LEA DX,DOT
+            INT 21H
+
+
         ; Access the book name address by loading from BookNames array
         MOV BX, [BOOK + SI]  ; Load address of the book name into BX
         MOV AH, 09H
@@ -2175,9 +2225,9 @@ MAIN ENDP
 
 
         ; Display New Line
-        MOV AH, 09H
-        LEA DX, NL
-        INT 21H
+        ;MOV AH, 09H
+        ;LEA DX, NL
+        ;INT 21H
 
         ; Increment SI by 2 to point to the next word (since addresses are word-sized)
         ADD SI, 2
