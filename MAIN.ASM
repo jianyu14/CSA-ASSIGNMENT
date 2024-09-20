@@ -58,7 +58,6 @@
 ;floating point display data
     factor DW 10       ; Scaling factor for displaying
 	result DW 0       ; Define the result variable as a 16-bit word
-	strResult DB 12 DUP('$')  ; Define a buffer for storing the string result
 	fraction_count DB 0
 ;;;;;
 
@@ -127,7 +126,7 @@
     TOTAL_AMOUNT_SPACE DB "                          $"
 	PROMPTPAY DB "	ENTER AMOUNT PAID : $"
     PAYMENT_HEADER DB 'No. Title           Price(RM)   Quantity    Total Amount(RM)', 0DH, 0AH, '$'
-	BuyQuantity DW 10 DUP(0)
+	;BuyQuantity DW 10 DUP(0)
 
 	;ITERATTION COUNT
 	COUNT_PAYMENT_MADE DW 0
@@ -144,6 +143,29 @@
 ;;;;;
 
 
+;Payment Link to Report Data
+    ;Book sold quantity
+    SoldQuantity DW 10 DUP(0)
+;;;;;
+
+
+;Report Data
+    REPORTMENU DB "REPORT MENU$"
+    OPTION_TOTAL_SALES DB "1. View Total Sales Report$"
+    OPTION_INVENTORY DB "2. View Inventory Report$"
+    OPTION_RETURN DB "3. Return Main Menu$"
+    PROMPTMSG DB "Enter Choice (1-3): $"
+    REPORTCHOICE DB ?
+    INAVLIDMSG DB "Invalid Choice, Try Again.$"
+    TOTAL_SALES_TITLE DB "          TOTAL SALES REPORT$"
+    INVENTORY_TITLE DB "            INVENTORY REPORT$"
+    BUFFER      DB 6 DUP (?)  ; Buffer to store the ASCII digits
+    SALESRPT_HEADER DB "Title         Price(RM)      Sold Quantity     Total(RM)$"
+    INVENTORYRPT_HEADER DB "Title         Stock Quantity$"
+    SPACE_PREFIX DB "              $"
+;;;;;
+
+
 ;General Display Data
     OPTION DB ?
     TEN DB 10
@@ -153,26 +175,236 @@
 ;;;;;
 
 
+;User Login Data
+	;Account
+	USERNAME DB "LegoGuy$"
+	PASS DB "1234$"
+	PASSLENGTH DB 4
+
+    ;Message and User Input
+	INV DB "Invalid Username or Password!!!$"   
+	SUC DB "LOGIN SUCCESSFULLY!$"
+	PROMPPASS DB "Enter password: $"
+	PTITLE DB "Book Lego Guy Book POS$"
+	PROMPUSN DB "Enter username: $"
+
+    ;User Name Input String
+	STRU LABEL BYTE
+	MAXNU DB 20
+	ACTNU DB ?
+	INPUTUSN DB 20 DUP("$")
+	
+    ;Password Input String
+	STRP LABEL BYTE
+	MAXNP DB 20
+	ACTNP DB ?
+	INPUTPASS DB 20 DUP("$")
+
+;;;;;
+
+
+;Temporary Main Menu Display Data and Selection for Testing Purposes
+    MAIN_MENU_MESSAGE DB "CHOOSE FUNCTION:  $"
+    CREATE_ORDER_FUNTION_SELECTION DB "1.  CREATE ORDER$"
+    REPORT_FUNCTION_SELECTION DB "2.  VIEW REPORT$"
+    MAIN_MENU_SELECTION DB ?
+;;;;;
+
+
+
 .CODE
 MAIN PROC
 	MOV AX,@DATA
 	MOV DS,AX
 
+        CALL LOGIN_FUNCTION
+        CMP AL,0
+        JNE EXIT_WHOLE_FUNCTION
+        
+
+    MAIN_AGAIN:
     ;MAIN MENU HERE
+    MOV AH,09H 
+    LEA DX,NL   
+    INT 21H
+    LEA DX,NL   
+    INT 21H
+    LEA DX,NL   
+    INT 21H
+    LEA DX,CREATE_ORDER_FUNTION_SELECTION
+    INT 21H 
+    LEA DX,NL  
+    INT 21H  
+    LEA DX,REPORT_FUNCTION_SELECTION
+    INT 21H  
+    LEA DX,NL  
+    INT 21H  
+    LEA DX,MAIN_MENU_MESSAGE
+    INT 21H  
 
-    
+    MOV AH,01H
+    INT 21H  
+    MOV MAIN_MENU_SELECTION,AL
 
+
+    CMP MAIN_MENU_SELECTION,'1'
+    JNE CHECK_NEXT
     ;CREATE ORDER FUNCTION
     CALL CREATE_ORDER_FUNCTION_MAIN      ;CALL PAYMENT FUNCTION IN HERE
+    JMP MAIN_AGAIN
 
 
+    CHECK_NEXT:
+    CMP MAIN_MENU_SELECTION,'2'
+    JNE QUIT_MAIN
+    ;REPORT FUNCTION
+    CALL REPORT_FUNCTION_MAIN
 
+
+    QUIT_MAIN:
+    CMP MAIN_MENU_SELECTION,'3'
+    JNE MAIN_AGAIN
+
+    EXIT_WHOLE_FUNCTION:
 
         MOV AX, 4C00H
         INT 21H
 MAIN ENDP
 
 
+
+
+;LOGIN_FUNCTION
+    LOGIN_FUNCTION PROC
+
+            MOV AH,09H
+            LEA DX,NL
+            INT 21H
+
+            LEA DX,PTITLE
+            INT 21H
+
+        LOGIN:
+            MOV AH,09H
+            LEA DX,NL
+            INT 21H
+            LEA DX,NL
+            INT 21H
+
+            LEA DX,PROMPUSN
+            INT 21H
+
+            MOV AH,0AH
+            LEA DX,STRU
+            INT 21H
+            
+            MOV AH,09H  
+            LEA DX,NL
+            INT 21H
+            
+            LEA DX,PROMPPASS
+            INT 21H
+            
+            MOV AH,0AH
+            LEA DX,STRP
+            INT 21H
+
+            MOV AH,09H
+            LEA DX,NL
+            INT 21H
+            
+            ;LOOP TO CHECK USER NAME FIRST
+            MOV SI,0
+            MOV CX,0H
+            MOV CL,ACTNU
+            VERIFYU:
+                MOV BL,INPUTUSN[SI]
+                CMP USERNAME[SI],BL
+                JNE INVALID
+                
+                INC SI
+                
+            LOOP VERIFYU
+
+            ;NOW LOOP TO CHECK PASSWORD
+            MOV SI,0
+            MOV CX,0H
+            MOV CL,ACTNP
+            VERIFYP:
+
+                MOV BL,INPUTPASS[SI]
+                CMP PASS[SI],BL
+                JNE INVALID
+                
+                INC SI
+                
+            LOOP VERIFYP
+
+            MOV Al,PASSLENGTH
+            CMP ACTNP,Al
+            JNE INVALID
+            
+            MOV AH,09H
+            LEA DX,SUC
+            INT 21H
+            JMP FINISH_LOGIN_SUCCESS
+
+            INVALID:
+                MOV AH,09H
+                LEA DX,INV
+                INT 21H
+
+                ;IF INVALID,PROMPT CONTINUE?
+                LEA DX,NL
+                INT 21H
+                
+                LEA DX,PINVALID
+                INT 21H
+                
+                LEA DX,NL
+                INT 21H
+                
+                ;Enter Again?
+                MOV AH,09H
+                LEA DX,ENTAGN
+                INT 21H
+                
+                LEA DX,NL
+                INT 21H
+                
+                ;Quit?
+                MOV AH,09H
+                LEA DX,QUIT
+                INT 21H
+                
+                LEA DX,NL
+                INT 21H
+                
+                ;PROMT USER INPUT 
+                LEA DX,PROMPOPT
+                INT 21H
+                
+                MOV AH,01H
+                INT 21H
+                MOV MAIN_MENU_SELECTION,AL
+                
+                CMP MAIN_MENU_SELECTION,'1'
+                JNE FINISH_LOGIN_FAILED ;QUIT
+                JMP LOGIN
+
+
+            FINISH_LOGIN_SUCCESS:
+                MOV AL,0
+                RET
+
+            FINISH_LOGIN_FAILED:
+                MOV AL,1
+                RET
+
+
+
+    LOGIN_FUNCTION ENDP
+;;;;;
 
 
 
@@ -749,15 +981,11 @@ MAIN ENDP
         
             DEC PAYMENT_LOOP_COUNT						;use PAYMENT_LOOP_COUNT to count 10 books for a loop
             CMP PAYMENT_LOOP_COUNT,0					;check if 10 books loop already done or not?
-            JE FINISH					;if yes, jump to finish
+            JE FINISH_DISPLAY_PAYMENT					;if yes, jump to finish
         
         JMP L1
 
-        FINISH:
-
-
-
-
+        FINISH_DISPLAY_PAYMENT:
 
 
         CALL DISPLAY_DASH
@@ -1430,17 +1658,17 @@ MAIN ENDP
         XOR BX,BX
             MOV BL,BOOK_ORDER_QUANTITY[DI]
             SUB LeftQuantity[SI],BX
-            ADD BuyQuantity[SI],BX
+            ADD SoldQuantity[SI],BX
             ADD SI,2
             INC DI
         LOOP DEDUCT
 
-        MOV CX,8
-        MOV DI,0
-        INITIALIZE_BOOK_ORDER_QUANTITY:
-            MOV BOOK_ORDER_QUANTITY[DI],0
-            INC DI
-        LOOP INITIALIZE_BOOK_ORDER_QUANTITY
+        ;MOV CX,8
+        ;MOV DI,0
+        ;INITIALIZE_BOOK_ORDER_QUANTITY:
+            ;MOV BOOK_ORDER_QUANTITY[DI],0
+            ;INC DI
+        ;LOOP INITIALIZE_BOOK_ORDER_QUANTITY
 
         ; Restore registers
         POP SI
@@ -1638,5 +1866,332 @@ MAIN ENDP
     ORDER_CONFIRMATION ENDP
 ;;;;;PAYMENT FUNCTION END
 
+
+
+
+;REPORT_FUNCTION
+    REPORT_FUNCTION_MAIN PROC
+
+        ;menu loop
+        RPTMENU_LOOP:
+
+        ;display menu
+        CALL DISPLAYMENU
+
+        ;get user input
+        CALL GETINPUT
+
+        ;check input
+        CMP REPORTCHOICE,1
+        JNE CHECK_CHOICE2
+        CALL VIEWTOTALSALESREPORT
+        JMP RPTMENU_LOOP  ; Ensure return to menu loop
+
+    CHECK_CHOICE2:
+        CMP REPORTCHOICE,2
+        JNE CHECK_CHOICE3
+        CALL VIEWINVENTORYREPORT
+        JMP RPTMENU_LOOP  ; Ensure return to menu loop
+
+    CHECK_CHOICE3:
+        CMP REPORTCHOICE,3
+        JNE INVALID_INPUT
+        JMP EXITMENU
+
+    INVALID_INPUT:
+        ;display invalid msg
+        CALL DISPLAYINVALID
+        JMP RPTMENU_LOOP
+
+        EXITMENU:
+            RET
+
+    REPORT_FUNCTION_MAIN ENDP
+
+
+    DISPLAYMENU PROC
+        ;TO DISPLAY NEW LINE
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        ;TO DISPLAY NEW LINE
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+        
+        MOV AH,09H
+        LEA DX,REPORTMENU
+        INT 21H
+        ;TO DISPLAY NEW LINE
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        ;OPTION1
+        MOV AH,09H
+        LEA DX,OPTION_TOTAL_SALES
+        INT 21H
+        ;TO DISPLAY NEW LINE
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        ;OPTION2
+        MOV AH,09H
+        LEA DX,OPTION_INVENTORY
+        INT 21H
+        ;TO DISPLAY NEW LINE
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        ;OPTION3
+        MOV AH,09H
+        LEA DX,OPTION_RETURN
+        INT 21H
+        ;TO DISPLAY NEW LINE
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        ;PROMPT INPUT
+        MOV AH,09H
+        LEA DX,PROMPTMSG
+        INT 21H
+
+        RET
+        
+    DISPLAYMENU ENDP
+
+
+    GETINPUT PROC
+        ;INPUT
+        MOV AH,01H
+        INT 21H
+        SUB AL,30H
+        MOV REPORTCHOICE,AL
+
+        RET
+    GETINPUT ENDP
+
+
+    DISPLAYINVALID PROC
+        ;TO DISPLAY NEW LINE
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+        MOV AH,09H
+        LEA DX,INAVLIDMSG
+        INT 21H
+        ;TO DISPLAY NEW LINE
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+        
+        RET
+    DISPLAYINVALID ENDP
+
+
+    VIEWTOTALSALESREPORT PROC
+
+        ;TO DISPLAY NEW LINE
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        ; Display the title of the report
+        MOV AH,09H
+        LEA DX,TOTAL_SALES_TITLE   
+        INT 21H
+
+        ;TO DISPLAY NEW LINE
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        MOV AH,09H
+        LEA DX,SALESRPT_HEADER   
+        INT 21H
+
+        ;TO DISPLAY NEW LINE
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        ; Set up loop counter for 8 books
+        MOV CX, 8
+        XOR SI, SI        ; Initialize loop counter for 8 books
+        MOV DI, 0
+
+    NEXT_BOOK:
+        ; Access the book name address by loading from BookNames array
+        MOV BX, [BOOK + SI]  ; Load address of the book name into BX
+        MOV AH, 09H
+        MOV DX, BX
+        INT 21H              ; Display the book name
+
+
+        ; Calculate the correct price index (each DD is 4 bytes)
+        MOV BX, SI
+        SHR BX, 1            ; Adjust index for DD access
+        ADD BX, BX           ; Double the index because each DD is 4 bytes
+        ADD BX, BX
+
+        ;Load floating point price
+        FLD DWORD PTR [PRICE[DI]]
+        FILD WORD PTR [factor]      ; Load scaling factor
+        FMUL                         ; Multiply to scale
+        FISTP result    ; Store scaled value as integer in 'result'
+
+        ; Display scaled price
+        CALL DISPF
+
+        MOV AH,09H
+        LEA DX,SPACE_PREFIX  
+        INT 21H
+        
+
+        MOV BX, SI
+        SHR BX, 1
+
+        CALL DISPLAY_SOLD_QUANTITY
+
+
+        MOV AH,09H
+        LEA DX,SPACE_PREFIX  
+        INT 21H
+
+        CALL CALCULATE_TOTAL_PRICE
+
+        ; Display New Line
+        MOV AH, 09H
+        LEA DX, NL
+        INT 21H
+
+        ; Increment SI by 2 to point to the next word (since addresses are word-sized)
+        ADD SI, 2
+
+        ; Increment DI by 4 for the next price in DD format
+        ADD DI, 4
+
+        ; Display New Line for separation between books
+        MOV AH, 09H
+        LEA DX, NL
+        INT 21H
+    
+        LOOP NEXT_BOOK
+
+        RET
+    VIEWTOTALSALESREPORT ENDP
+
+
+    CALCULATE_TOTAL_PRICE PROC
+
+        ; Calculate the correct price index (each DD is 4 bytes)
+        MOV BX, DI                      ; Using DI for price index, ensure DI is correctly incremented for DD
+        FLD DWORD PTR [PRICE + BX]      ; Load the floating-point price
+
+        ; Load and convert the sold quantity
+        ;MOV AX, [SoldQuantity + SI]     ; Load sold quantity (assuming SOLD_QUANTITY array exists)
+        ; Convert AX to float and push on the FPU stack
+        ;MOV BX, AX                      ; Copy to BX for FILD
+        FILD WORD PTR [SoldQuantity + SI]              ; Convert integer to float (need to use a memory operand)
+
+        ; Multiply price by sold quantity
+        FMUL                            ; Result in ST(0) = price * quantity
+        ;FSTP DWORD PTR [buffer]         ; Store the floating-point result temporarily (buffer defined in .DATA)
+        ;FILD DWORD PTR [buffer]         ; Load result back as integer scaled by 100 (or your scaling logic)
+
+        ; Store scaled result for display
+        FILD WORD PTR [factor]
+        FMUL
+        FISTP DWORD PTR [result]    ; Convert to integer for display
+        CALL DISPF                  ; Display the result
+        
+        RET
+
+    CALCULATE_TOTAL_PRICE ENDP
+
+
+    DISPLAY_SOLD_QUANTITY PROC
+        ; Display sold quantity
+        MOV AX, SoldQuantity[SI]
+        CALL PRINT_INT
+        RET
+    DISPLAY_SOLD_QUANTITY ENDP
+
+
+
+    VIEWINVENTORYREPORT PROC
+
+        ;TO DISPLAY NEW LINE
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        ;TO DISPLAY NEW LINE
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        MOV AH,09H
+        LEA DX,INVENTORY_TITLE
+        INT 21H
+
+        ;TO DISPLAY NEW LINE
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        MOV AH,09H
+        LEA DX,INVENTORYRPT_HEADER 
+        INT 21H
+
+        ;TO DISPLAY NEW LINE
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        ; Set up loop counter for 8 books
+        MOV CX, 8
+        XOR SI, SI        ; Initialize loop counter for 8 books
+
+    NEXT_BOOK2:
+        ; Access the book name address by loading from BookNames array
+        MOV BX, [BOOK + SI]  ; Load address of the book name into BX
+        MOV AH, 09H
+        MOV DX, BX
+        INT 21H              ; Display the book name
+
+
+
+        MOV BX, SI
+        SHR BX, 1
+
+        ; Display left quantity
+        CALL DISPLAY_QUANTITY
+
+
+
+        ; Display New Line
+        MOV AH, 09H
+        LEA DX, NL
+        INT 21H
+
+        ; Increment SI by 2 to point to the next word (since addresses are word-sized)
+        ADD SI, 2
+
+        ; Display New Line for separation between books
+        MOV AH, 09H
+        LEA DX, NL
+        INT 21H
+
+    
+        LOOP NEXT_BOOK2
+
+        RET
+    VIEWINVENTORYREPORT ENDP
+;;;;;
 
 END MAIN
