@@ -136,6 +136,7 @@
 	LINE DB "---------------------------$"
 	COLUMN_DIS_ALL_HEADERS DB 'No. Title       Price(RM)   Left Quantity   Genre         Author', 0DH, 0AH, '$'
 	COLUMN_DIS_GENRE_HEADERS DB 'No. Title       Price(RM)   Left Quantity   Author', 0DH, 0AH, '$'
+	COLUMN_DIS_AUTHOR_HEADERS DB 'No. Title       Price(RM)   Left Quantity   Author', 0DH, 0AH, '$'
 	ALL_PRICE_COLUMN_SPACE DB '       ', '$'
 	ALL_LQ_COLUMN_SPACE DB '             ', '$'
 	ALL_AUTHOR_COLUMN_SPACE DB '   ', '$'
@@ -624,12 +625,6 @@ MAIN ENDP
         LEA DX,NL
         INT 21H
 
-        LEA DX,LINE
-        INT 21H
-
-        LEA DX,NL
-        INT 21H
-
         ;Compare the input with KOH character by character
         KOH_CBC:
         MOV CL,ACTS
@@ -748,9 +743,13 @@ MAIN ENDP
 
 	;WHISPERS
         WP:
-        MOV AH,09H
-        LEA DX,D_TITLE
-        INT 21H
+        
+		CALL DISPLAY_DASH
+
+		LEA DX,COLUMN_DIS_ALL_HEADERS
+		INT 21H
+
+		CALL DISPLAY_DASH
 
         ;Display bookname
         MOV SI,OFFSET BOOK
@@ -760,12 +759,6 @@ MAIN ENDP
         MOV AH,09H              ; DOS print string function
         INT 21H      
 
-        LEA DX,NL
-        INT 21H 
-
-        LEA DX,D_PRICE
-        INT 21H  
-        
         ;Display bookprice
         ; Load the floating-point values into the FPU and multiply
         MOV DI,0
@@ -774,14 +767,11 @@ MAIN ENDP
         FMUL                  ; Multiply result by factor to scale
         FISTP result          ; Store integer part in result
 
-        CALL DISPF     
+        CALL DISPF  
 
-        MOV AH,09H
-        LEA DX,NL
-        INT 21H
-
-        LEA DX,D_LQ
-        INT 21H
+        MOV AH, 09H
+		LEA DX,ALL_PRICE_COLUMN_SPACE
+		INT 21H
 
         ;Display left quantity
         MOV SI,0
@@ -809,11 +799,8 @@ MAIN ENDP
         ADD DL,30H
         INT 21H
 
-        MOV AH,09H
-        LEA DX,NL
-        INT 21H
-
-        LEA DX,D_GENRE
+		MOV AH, 09H          ; print string
+        LEA DX,ALL_LQ_COLUMN_SPACE
         INT 21H
 
         ;Display book genre
@@ -824,19 +811,21 @@ MAIN ENDP
         MOV AH,09H           
         INT 21H 
 
-        MOV AH,09H
-        LEA DX,NL
-        INT 21H
+        MOV SI,OFFSET AUTHOR
+        ADD SI,0
+        MOV AX,[SI]            
+        MOV DX,AX             
+        MOV AH,09H           
+        INT 21H 
 
         MOV AH,09H
+		LEA DX,ALL_AUTHOR_COLUMN_SPACE
+
         LEA DX,NL
         INT 21H
 
 	;ECHO
         EH:
-        MOV AH,09H
-        LEA DX,D_TITLE
-        INT 21H
 
         ;Display bookname
         MOV SI,OFFSET BOOK
@@ -846,12 +835,6 @@ MAIN ENDP
         MOV AH, 09H              ; DOS print string function
         INT 21H      
 
-        LEA DX,NL
-        INT 21H 
-
-        LEA DX,D_PRICE
-        INT 21H  
-        
         ;Display bookprice
         ; Load the floating-point values into the FPU and multiply
         MOV DI,4
@@ -860,14 +843,11 @@ MAIN ENDP
         FMUL                  ; Multiply result by factor to scale
         FISTP result          ; Store integer part in result
 
-        CALL DISPF 
+        CALL DISPF    
 
         MOV AH,09H
-        LEA DX,NL
-        INT 21H
-
-        LEA DX,D_LQ
-        INT 21H
+		LEA DX,ALL_PRICE_COLUMN_SPACE
+		INT 21H
 
         ;Display left quantity
         MOV SI,2
@@ -896,10 +876,7 @@ MAIN ENDP
         INT 21H
 
         MOV AH,09H
-        LEA DX,NL
-        INT 21H
-
-        LEA DX,D_GENRE
+        LEA DX,ALL_LQ_COLUMN_SPACE
         INT 21H
 
         ;Display book genre
@@ -910,13 +887,30 @@ MAIN ENDP
         MOV AH,09H           
         INT 21H 
 
+        MOV SI,OFFSET AUTHOR
+        ADD SI,2
+        MOV AX,[SI]            
+        MOV DX,AX             
+        MOV AH,09H           
+        INT 21H 
+
+        MOV AH,09H
+		LEA DX,ALL_AUTHOR_COLUMN_SPACE
+		INT 21H
+
+        LEA DX,NL
+        INT 21H
+
         JMP CONTINUE_9 ;End this author and jump to continue_9 to ask the user want to continue or not
 
 	;LOCKET
         LK:
-        MOV AH,09H 
-        LEA DX,D_TITLE
-        INT 21H
+        CALL DISPLAY_DASH
+
+		LEA DX,COLUMN_DIS_ALL_HEADERS
+		INT 21H
+
+		CALL DISPLAY_DASH
 
         ;Display bookname
         MOV SI,OFFSET BOOK
@@ -925,12 +919,6 @@ MAIN ENDP
         MOV DX, AX               ; Move the offset into DX (required for INT 21H)
         MOV AH, 09H              ; DOS print string function
         INT 21H      
-
-        LEA DX,NL
-        INT 21H 
-
-        LEA DX,D_PRICE
-        INT 21H  
         
         ;Display bookprice
         ; Load the floating-point values into the FPU and multiply
@@ -940,13 +928,10 @@ MAIN ENDP
         FMUL                  ; Multiply result by factor to scale
         FISTP result          ; Store integer part in result
 
-        CALL DISPF  
+        CALL DISPF      
 
         MOV AH,09H
-        LEA DX,NL
-        INT 21H
-
-        LEA DX,D_LQ
+        LEA DX,ALL_PRICE_COLUMN_SPACE
         INT 21H
 
         ;Display left quantity
@@ -976,10 +961,7 @@ MAIN ENDP
         INT 21H
 
         MOV AH,09H
-        LEA DX,NL
-        INT 21H
-
-        LEA DX,D_GENRE
+        LEA DX,ALL_LQ_COLUMN_SPACE
         INT 21H
 
         ;Display book genre
@@ -988,21 +970,26 @@ MAIN ENDP
         MOV AX,[SI]            
         MOV DX,AX             
         MOV AH,09H           
+        INT 21H  
+
+        MOV SI,OFFSET AUTHOR
+        ADD SI,4
+        MOV AX,[SI]            
+        MOV DX,AX             
+        MOV AH,09H           
         INT 21H 
 
         MOV AH,09H
-        LEA DX,NL
-        INT 21H
+		LEA DX,ALL_AUTHOR_COLUMN_SPACE
+		INT 21H
 
         MOV AH,09H
         LEA DX,NL
         INT 21H
+
 
 	;Willow
         WL:
-        MOV AH,09H
-        LEA DX,D_TITLE
-        INT 21H
 
         ;Display bookname
         MOV SI,OFFSET BOOK
@@ -1011,12 +998,6 @@ MAIN ENDP
         MOV DX,AX               ; Move the offset into DX (required for INT 21H)
         MOV AH,09H              ; DOS print string function
         INT 21H      
-
-        LEA DX,NL
-        INT 21H 
-
-        LEA DX,D_PRICE
-        INT 21H  
         
         ;Display bookprice
         ; Load the floating-point values into the FPU and multiply
@@ -1026,13 +1007,10 @@ MAIN ENDP
         FMUL                  ; Multiply result by factor to scale
         FISTP result          ; Store integer part in result
 
-        CALL DISPF  
+        CALL DISPF      
 
         MOV AH,09H
-        LEA DX,NL
-        INT 21H
-
-        LEA DX,D_LQ
+        LEA DX,ALL_PRICE_COLUMN_SPACE
         INT 21H
 
         ;Display left quantity
@@ -1062,10 +1040,7 @@ MAIN ENDP
         INT 21H
 
         MOV AH,09H
-        LEA DX,NL
-        INT 21H
-
-        LEA DX,D_GENRE
+        LEA DX,ALL_LQ_COLUMN_SPACE
         INT 21H
 
         ;Display book genre
@@ -1075,14 +1050,32 @@ MAIN ENDP
         MOV DX,AX             
         MOV AH,09H           
         INT 21H 
-        
+
+        MOV SI,OFFSET AUTHOR
+        ADD SI,6
+        MOV AX,[SI]            
+        MOV DX,AX             
+        MOV AH,09H           
+        INT 21H 
+
+        MOV AH,09H
+		LEA DX,ALL_AUTHOR_COLUMN_SPACE
+		INT 21H
+
+        LEA DX,NL
+        INT 21H
+
         JMP CONTINUE_9 ;End this author and jump to continue_9 to ask the user want to continue or not
+
 
 	;Rendezvous
         RD:
-        MOV AH,09H
-        LEA DX,D_TITLE
-        INT 21H
+        CALL DISPLAY_DASH
+
+		LEA DX,COLUMN_DIS_ALL_HEADERS
+		INT 21H
+
+		CALL DISPLAY_DASH
 
         ;Display bookname
         MOV SI,OFFSET BOOK
@@ -1091,14 +1084,9 @@ MAIN ENDP
         MOV DX,AX               ; Move the offset into DX (required for INT 21H)
         MOV AH,09H              ; DOS print string function
         INT 21H      
-
-        LEA DX,NL
-        INT 21H 
-
-        LEA DX,D_PRICE
-        INT 21H  
         
         ;Display bookprice
+        ;Price
         ; Load the floating-point values into the FPU and multiply
         MOV DI,16
         FLD DWORD PTR [Price[DI]]  ; Load num1 into the FPU stack
@@ -1106,13 +1094,10 @@ MAIN ENDP
         FMUL                  ; Multiply result by factor to scale
         FISTP result          ; Store integer part in result
 
-        CALL DISPF    
+        CALL DISPF      
 
         MOV AH,09H
-        LEA DX,NL
-        INT 21H
-
-        LEA DX,D_LQ
+        LEA DX,ALL_PRICE_COLUMN_SPACE
         INT 21H
 
         ;Display left quantity
@@ -1142,10 +1127,7 @@ MAIN ENDP
         INT 21H
 
         MOV AH,09H
-        LEA DX,NL
-        INT 21H
-
-        LEA DX,D_GENRE
+        LEA DX,ALL_LQ_COLUMN_SPACE
         INT 21H
 
         ;Display book genre
@@ -1156,20 +1138,24 @@ MAIN ENDP
         MOV AH,09H           
         INT 21H 
 
+        MOV SI,OFFSET AUTHOR
+        ADD SI,8
+        MOV AX,[SI]            
+        MOV DX,AX             
+        MOV AH,09H           
+        INT 21H 
+
         MOV AH,09H
-        LEA DX,NL
-        INT 21H
+		LEA DX,ALL_AUTHOR_COLUMN_SPACE
+		INT 21H 
 
         MOV AH,09H
         LEA DX,NL
         INT 21H
+
 
 	;CRIMSON
         CR:
-        MOV AH,09H
-        LEA DX,D_TITLE
-        INT 21H
-
         ;Display bookname
         MOV SI,OFFSET BOOK
         ADD SI,10
@@ -1177,14 +1163,9 @@ MAIN ENDP
         MOV DX,AX               ; Move the offset into DX (required for INT 21H)
         MOV AH,09H              ; DOS print string function
         INT 21H      
-
-        LEA DX,NL
-        INT 21H 
-
-        LEA DX,D_PRICE
-        INT 21H  
         
         ;Display bookprice
+        ;Price
         ; Load the floating-point values into the FPU and multiply
         MOV DI,20
         FLD DWORD PTR [Price[DI]]  ; Load num1 into the FPU stack
@@ -1192,13 +1173,10 @@ MAIN ENDP
         FMUL                  ; Multiply result by factor to scale
         FISTP result          ; Store integer part in result
 
-        CALL DISPF   
+        CALL DISPF    
 
         MOV AH,09H
-        LEA DX,NL
-        INT 21H
-
-        LEA DX,D_LQ
+        LEA DX,ALL_PRICE_COLUMN_SPACE
         INT 21H
 
         ;Display left quantity
@@ -1228,10 +1206,7 @@ MAIN ENDP
         INT 21H
 
         MOV AH,09H
-        LEA DX,NL
-        INT 21H
-
-        LEA DX,D_GENRE
+        LEA DX,ALL_LQ_COLUMN_SPACE
         INT 21H
 
         ;Display book genre
@@ -1241,14 +1216,31 @@ MAIN ENDP
         MOV DX,AX             
         MOV AH,09H           
         INT 21H 
-        
+
+        MOV SI,OFFSET AUTHOR
+        ADD SI,10
+        MOV AX,[SI]            
+        MOV DX,AX             
+        MOV AH,09H           
+        INT 21H 
+
+        MOV AH,09H
+		LEA DX,ALL_AUTHOR_COLUMN_SPACE
+		INT 21H
+
+        LEA DX,NL
+        INT 21H
+
         JMP CONTINUE_9 ;End this author and jump to continue_9 to ask the user want to continue or not
 
 	;Shadows
         SD:
-        MOV AH,09H
-        LEA DX,D_TITLE
-        INT 21H
+        CALL DISPLAY_DASH
+
+		LEA DX,COLUMN_DIS_ALL_HEADERS
+		INT 21H
+
+		CALL DISPLAY_DASH
 
         ;Display bookname
         MOV SI,OFFSET BOOK
@@ -1256,13 +1248,7 @@ MAIN ENDP
         MOV AX, [SI]             ; Load the offset of the second book name into AX
         MOV DX, AX               ; Move the offset into DX (required for INT 21H)
         MOV AH, 09H              ; DOS print string function
-        INT 21H      
-
-        LEA DX,NL
-        INT 21H 
-
-        LEA DX,D_PRICE
-        INT 21H  
+        INT 21H       
         
         ;Display bookprice
         ; Load the floating-point values into the FPU and multiply
@@ -1272,13 +1258,10 @@ MAIN ENDP
         FMUL                  ; Multiply result by factor to scale
         FISTP result          ; Store integer part in result
 
-        CALL DISPF  ;below no need, do until here is cukup    
+        CALL DISPF    
 
         MOV AH,09H
-        LEA DX,NL
-        INT 21H
-
-        LEA DX,D_LQ
+        LEA DX,ALL_PRICE_COLUMN_SPACE
         INT 21H
 
         ;Display left quantity
@@ -1308,10 +1291,7 @@ MAIN ENDP
         INT 21H
 
         MOV AH,09H
-        LEA DX,NL
-        INT 21H
-
-        LEA DX,D_GENRE
+        LEA DX,ALL_LQ_COLUMN_SPACE
         INT 21H
 
         ;Display book genre
@@ -1321,34 +1301,30 @@ MAIN ENDP
         MOV DX, AX             
         MOV AH, 09H           
         INT 21H 
-        
-        MOV AH,09H
-        LEA DX,NL
-        INT 21H
+
+        MOV SI,OFFSET AUTHOR
+        ADD SI,12
+        MOV AX,[SI]            
+        MOV DX,AX             
+        MOV AH,09H           
+        INT 21H 
 
         MOV AH,09H
-        LEA DX,NL
-        INT 21H
+		LEA DX,ALL_AUTHOR_COLUMN_SPACE
+		INT 21H
+
+		LEA DX,NL 
+		INT 21H 
 
 	;Memories
         MM:
-        MOV AH,09H
-        LEA DX,D_TITLE
-        INT 21H
-
         ;Display bookname
         MOV SI,OFFSET BOOK
         ADD SI,14
         MOV AX,[SI]             ; Load the offset of the second book name into AX
         MOV DX,AX               ; Move the offset into DX (required for INT 21H)
         MOV AH,09H              ; DOS print string function
-        INT 21H      
-
-        LEA DX,NL
-        INT 21H 
-
-        LEA DX,D_PRICE
-        INT 21H  
+        INT 21H     
         
         ;Display bookprice
         ; Load the floating-point values into the FPU and multiply
@@ -1358,13 +1334,10 @@ MAIN ENDP
         FMUL                  ; Multiply result by factor to scale
         FISTP result          ; Store integer part in result
 
-        CALL DISPF  ;below no need, do until here is cukup   
+        CALL DISPF 
 
         MOV AH,09H
-        LEA DX,NL
-        INT 21H
-
-        LEA DX,D_LQ
+        LEA DX,ALL_PRICE_COLUMN_SPACE
         INT 21H
 
         ;Display left quantity
@@ -1394,10 +1367,7 @@ MAIN ENDP
         INT 21H
 
         MOV AH,09H
-        LEA DX,NL
-        INT 21H
-
-        LEA DX,D_GENRE
+        LEA DX,ALL_LQ_COLUMN_SPACE
         INT 21H
 
         ;Display book Genre
@@ -1407,6 +1377,20 @@ MAIN ENDP
         MOV DX,AX             
         MOV AH,09H           
         INT 21H  
+
+        MOV SI,OFFSET AUTHOR
+        ADD SI,14
+        MOV AX,[SI]            
+        MOV DX,AX             
+        MOV AH,09H           
+        INT 21H 
+
+        MOV AH,09H
+		LEA DX,ALL_AUTHOR_COLUMN_SPACE
+		INT 21H 
+
+        LEA DX,NL
+        INT 21H
         
         JMP CONTINUE_9 ;End this author and jump to continue_9 to ask the user want to continue or not
         
