@@ -586,6 +586,7 @@ MAIN ENDP
         MOV AX,@DATA
         MOV DS,AX
 
+	;Display the header
         MOV AH,09H
         LEA DX,NL
         INT 21H
@@ -606,10 +607,10 @@ MAIN ENDP
         INT 21H
 
         AUTHOR_L:
-        ;Ask user enter the author name
         LEA DX,NL
         INT 21H
 
+	;Ask user enter the author name
         LEA DX,QUESTION_FOUR
         INT 21H
 
@@ -628,7 +629,7 @@ MAIN ENDP
         LEA DX,NL
         INT 21H
 
-        ;Compare with KOH
+        ;Compare the input with KOH character by character
         KOH_CBC:
         MOV CL,ACTS
         MOV SI,1
@@ -638,7 +639,7 @@ MAIN ENDP
 
             MOV BH,AUTHOR1[SI]
             CMP INPUTSTR[DI],BH
-            JNE CHIAM_CBC
+            JNE CHIAM_CBC ;if the input not same with current author will jump to next author
 
             INC SI
             INC DI
@@ -646,16 +647,17 @@ MAIN ENDP
 
         LOOP KOH
 
+	    ;Compare the length 
             KOH_LENGTH:
             MOV SI,0
             MOV DL,BL
             ADD DL,30H
             CMP DL,AUTHOR1[SI]
-            JNE CHIAM_CBC
+            JNE CHIAM_CBC ;if the input not same current author jump to next author
 
-            JMP WP
+            JMP WP ;if the input same with current author will jump to the book information
 
-        ;Compare with CHIAM
+        ;Compare the input with CHIAM character by character
         CHIAM_CBC:
         MOV CL,ACTS
         MOV SI,6
@@ -664,8 +666,8 @@ MAIN ENDP
         CHIAM:
 
             MOV BH,AUTHOR1[SI]
-            CMP INPUTSTR[DI],BH
-            JNE LAU_CBC
+            CMP INPUTSTR[DI],BH 
+            JNE LAU_CBC ;if the input not same with current author will jump to next author
 
             INC SI
             INC DI
@@ -673,16 +675,17 @@ MAIN ENDP
 
         LOOP CHIAM
 
+	    ;Compare the length
             CHIAM_LENGTH:
             MOV SI,5
             MOV DL,BL
             ADD DL,30H
             CMP DL,AUTHOR1[SI]
-            JNE LAU_CBC
+            JNE LAU_CBC  ;if the input not same current author jump to next author
 
-            JMP LK
+            JMP LK ;if the input same with current author will jump to the book information
 
-        ;Compare with LAU
+        ;Compare the input with LAU character by character
         LAU_CBC:
         MOV CL,ACTS
         MOV SI,13
@@ -692,7 +695,7 @@ MAIN ENDP
 
             MOV BH,AUTHOR1[SI]
             CMP INPUTSTR[DI],BH
-            JNE LOKE_CBC
+            JNE LOKE_CBC ;if the input not same with current author will jump to next author
 
             INC SI
             INC DI
@@ -700,16 +703,17 @@ MAIN ENDP
 
         LOOP LAU
 
+	    ;Compare the length
             LAU_LENGTH:
             MOV SI,12
             MOV DL,BL
             ADD DL,30H
             CMP DL,AUTHOR1[SI]
-            JNE LOKE_CBC
+            JNE LOKE_CBC ;if the input not same with current author will jump to next author
 
-            JMP RD
+            JMP RD ;if the input same with current author will jump to the book information
 
-        ;Compare with LOKE
+        ;Compare the input with LOKE character by character
         LOKE_CBC:
         MOV CL,ACTS
         MOV SI,18
@@ -719,7 +723,7 @@ MAIN ENDP
 
             MOV BH,AUTHOR1[SI]
             CMP INPUTSTR[DI],BH
-            JNE ER
+            JNE ER ;if the input not same with current author will jump the error message 
 
             INC SI
             INC DI
@@ -727,25 +731,26 @@ MAIN ENDP
 
         LOOP LOKE
 
+	    ;Compare the length
             LOKE_LENGTH:
             MOV SI,17
             MOV DL,BL
             ADD DL,30H
             CMP DL,AUTHOR1[SI]
-            JNE ER
+            JNE ER ;if the input not same with current author will jump the error message 
 
-            JMP SD
+            JMP SD ;if the input same with current author will jump to the book information
             
 
         ER:
-        JMP ERROR_A
+        JMP ERROR_A ;Jump to the error message
 
+	;WHISPERS
         WP:
         MOV AH,09H
         LEA DX,D_TITLE
         INT 21H
 
-        ;WHISPERS
         ;Display bookname
         MOV SI,OFFSET BOOK
         ADD SI,0
@@ -761,7 +766,6 @@ MAIN ENDP
         INT 21H  
         
         ;Display bookprice
-        ;Price
         ; Load the floating-point values into the FPU and multiply
         MOV DI,0
         FLD DWORD PTR [Price[DI]]  ; Load num1 into the FPU stack
@@ -827,12 +831,12 @@ MAIN ENDP
         LEA DX,NL
         INT 21H
 
+	;ECHO
         EH:
         MOV AH,09H
         LEA DX,D_TITLE
         INT 21H
 
-        ;ECHO
         ;Display bookname
         MOV SI,OFFSET BOOK
         ADD SI,2
@@ -848,7 +852,6 @@ MAIN ENDP
         INT 21H  
         
         ;Display bookprice
-        ;Price
         ; Load the floating-point values into the FPU and multiply
         MOV DI,4
         FLD DWORD PTR [Price[DI]]  ; Load num1 into the FPU stack
@@ -906,14 +909,14 @@ MAIN ENDP
         MOV AH,09H           
         INT 21H 
 
-        JMP CONTINUE_9
+        JMP CONTINUE_9 ;End this author and jump to continue_9 to ask the user want to continue or not
 
+	;LOCKET
         LK:
         MOV AH,09H 
         LEA DX,D_TITLE
         INT 21H
 
-        ;LOCKET
         ;Display bookname
         MOV SI,OFFSET BOOK
         ADD SI,4
@@ -929,7 +932,6 @@ MAIN ENDP
         INT 21H  
         
         ;Display bookprice
-        ;Price
         ; Load the floating-point values into the FPU and multiply
         MOV DI,8
         FLD DWORD PTR [Price[DI]]  ; Load num1 into the FPU stack
@@ -995,13 +997,12 @@ MAIN ENDP
         LEA DX,NL
         INT 21H
 
-
+	;Willow
         WL:
         MOV AH,09H
         LEA DX,D_TITLE
         INT 21H
 
-        ;WILLOW
         ;Display bookname
         MOV SI,OFFSET BOOK
         ADD SI,6
@@ -1017,7 +1018,6 @@ MAIN ENDP
         INT 21H  
         
         ;Display bookprice
-        ;Price
         ; Load the floating-point values into the FPU and multiply
         MOV DI,12
         FLD DWORD PTR [Price[DI]]  ; Load num1 into the FPU stack
@@ -1075,8 +1075,9 @@ MAIN ENDP
         MOV AH,09H           
         INT 21H 
         
-        JMP CONTINUE_9
+        JMP CONTINUE_9 ;End this author and jump to continue_9 to ask the user want to continue or not
 
+	;Rendezvous
         RD:
         MOV AH,09H
         LEA DX,D_TITLE
@@ -1097,7 +1098,6 @@ MAIN ENDP
         INT 21H  
         
         ;Display bookprice
-        ;Price
         ; Load the floating-point values into the FPU and multiply
         MOV DI,16
         FLD DWORD PTR [Price[DI]]  ; Load num1 into the FPU stack
@@ -1163,13 +1163,12 @@ MAIN ENDP
         LEA DX,NL
         INT 21H
 
-
+	;CRIMSON
         CR:
         MOV AH,09H
         LEA DX,D_TITLE
         INT 21H
 
-        ;CRIMSON
         ;Display bookname
         MOV SI,OFFSET BOOK
         ADD SI,10
@@ -1185,7 +1184,6 @@ MAIN ENDP
         INT 21H  
         
         ;Display bookprice
-        ;Price
         ; Load the floating-point values into the FPU and multiply
         MOV DI,20
         FLD DWORD PTR [Price[DI]]  ; Load num1 into the FPU stack
@@ -1243,8 +1241,9 @@ MAIN ENDP
         MOV AH,09H           
         INT 21H 
         
-        JMP CONTINUE_9
+        JMP CONTINUE_9 ;End this author and jump to continue_9 to ask the user want to continue or not
 
+	;Shadows
         SD:
         MOV AH,09H
         LEA DX,D_TITLE
@@ -1265,7 +1264,6 @@ MAIN ENDP
         INT 21H  
         
         ;Display bookprice
-        ;Price
         ; Load the floating-point values into the FPU and multiply
         MOV DI,24
         FLD DWORD PTR [Price[DI]]  ; Load num1 into the FPU stack
@@ -1331,6 +1329,7 @@ MAIN ENDP
         LEA DX,NL
         INT 21H
 
+	;Memories
         MM:
         MOV AH,09H
         LEA DX,D_TITLE
@@ -1351,7 +1350,6 @@ MAIN ENDP
         INT 21H  
         
         ;Display bookprice
-        ;Price
         ; Load the floating-point values into the FPU and multiply
         MOV DI,28
         FLD DWORD PTR [Price[DI]]  ; Load num1 into the FPU stack
@@ -1409,18 +1407,18 @@ MAIN ENDP
         MOV AH,09H           
         INT 21H  
         
-        JMP CONTINUE_9
+        JMP CONTINUE_9 ;End this author and jump to continue_9 to ask the user want to continue or not
         
 
         ;Invalid input
         ERROR_A:
                 MOV AH,09H
-                LEA DX,ERROR_MESSAGE_THREE
+                LEA DX,ERROR_MESSAGE_THREE ;Display the error message and ask the user enter again
                 INT 21H
 
                 LEA DX,NL
                 INT 21H
-                JMP AUTHOR_L
+                JMP AUTHOR_L ;Jump to the AUTHOR_L again 
 
 
         FIN_A:
