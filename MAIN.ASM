@@ -525,7 +525,7 @@ MAIN ENDP
     SEARCH_BOOK_FUNCTION_MAIN PROC
         CALL MENU ;Display the search function menu 
 
-		;Display the message to ask the user want to continue searching or not
+	;Display the message to ask the user want to continue searching or not
         CONTINUE_9:
 
         MOV AH,09H
@@ -536,10 +536,11 @@ MAIN ENDP
         LEA DX,NL
         INT 21H
 
+	；ask the user want to continue searching or not
         LEA DX,QUESTION_THREE
         INT 21H
 
-        ;get input
+        ;get answer
         MOV AH,01H
         INT 21H
         MOV SEARCH_SELECTION_THREE,AL
@@ -552,26 +553,29 @@ MAIN ENDP
         LEA DX,NL
         INT 21H
 
+	;Compare the anser is Y or not
         CMP SEARCH_SELECTION_THREE,'Y'
-        JNE CONTINUE_10
+        JNE CONTINUE_10 ;if not equal to Y will jump to CONTINUE_10
 
-        CALL MENU
+        CALL MENU ;If equal to Y go back to the search menu
 
-		CONTINUE_10:
-		CMP SEARCH_SELECTION_THREE,'N'
-        JNE ERROR_M
+	;Compare the answer is N or not
+	CONTINUE_10:
+	CMP SEARCH_SELECTION_THREE,'N'
+        JNE ERROR_M ;if not equal to N will display the error message and ask user to enter again
 
-        CALL MAIN_AGAIN
+	;If equal to N go back to the main menu
+        CALL MAIN_AGAIN 
 
-		ERROR_M:
-		MOV AH,09H
-		LEA DX,ERROR_MESSAGE_ONE
-		INT 21H
+	ERROR_M:
+	MOV AH,09H
+	LEA DX,ERROR_MESSAGE_ONE
+	INT 21H
 
-		LEA DX,NL
-		INT 21H 
+	LEA DX,NL
+	INT 21H 
 
-		JMP CONTINUE_9
+	JMP CONTINUE_9
 
         FIN_M:
         RET
