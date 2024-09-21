@@ -44,6 +44,36 @@
 ;;;;;
 
 
+;Author Data
+	KWY DB "Koh Win Yee$"
+	CJY DB "Chiam Jian Yu$"
+	LZY DB "Lau Zi Lin$"
+	LXY DB "Loke Xin Yee$"
+
+	AUTHOR DW OFFSET KWY, OFFSET KWY, OFFSET CJY, OFFSET CJY, OFFSET LZY, OFFSET LZY, OFFSET LXY, OFFSET LXY
+
+	AUTHOR1 DB "3KOH$","5CHIAM$","3LAU$","4LOKE$"
+;;;;;
+
+
+;Genre Data
+	H DB "Horror        $"
+    R DB "Romance       $"
+    A DB "Adventure     $"
+    N DB "Non-fiction   $"
+    E DB "Education     $"
+
+	GENRE DW OFFSET R, OFFSET H, OFFSET A, OFFSET E, OFFSET R, OFFSET N, OFFSET H, OFFSET R, OFFSET A, OFFSET E
+
+	H1 DB "Horror$"
+    R1 DB "Romance$"
+    A1 DB "Adventure$"
+    N1 DB "Non-fiction$"
+    EDUC DB "Education$"
+
+;;;;;
+
+
 ;TEMP REGISTERS?
 	TAL DB ?
 	TBL DB ?
@@ -59,6 +89,54 @@
     factor DW 10       ; Scaling factor for displaying
 	result DW 0       ; Define the result variable as a 16-bit word
 	fraction_count DB 0
+;;;;;
+
+
+;Search Function Data
+    ;User Input String
+	SEARCH_INPUT_STRING LABEL BYTE
+	MAXS DB 50
+	ACTS DB ?
+	INPUTSTR DB 50 DUP("$")	
+
+	BOOKNAME_FOR_SEARCH DB "7WHISPERS$", "4ECHO$", "6LOCKET$", "6WILLOW$", "10RENDEZVOUS$", "7CRIMSON$", "7SHADOWS$", "8MEMORIES$"
+
+    SEARCH_MENU_1 DB "1.Search by title$"
+	SEARCH_MENU_2 DB "2.Search by author$"
+	SEARCH_MENU_3 DB "3.Search by genre$"
+	SEARCH_MENU_4 DB "4.Display All$"
+	CONFIRM_SELECTION DB "You have select $"
+	INPUT_BOOK_TITLE DB "Please enter the book title: $"
+	D_TITLE DB "TITLE : $"
+	D_PRICE DB "PRICE : $"
+	D_LQ DB "LEFT_QUANTITY : $"
+	D_GENRE DB "GENRE : $"
+	D_AUTHOR DB "AUTHOR : $"
+	HEARDER_H DB "Here are the Horror books.$"
+	HEARDER_R DB "Here are the Romance books.$"
+	HEARDER_A DB "Here are the Adventure books.$"
+	HEARDER_NF DB "Here are the Non-Fiction books.$"
+	HEARDER_E DB "Here are the Education books.$"
+	HEARDER_SEARCH_MENU DB "MENU$"
+	HEARDER_SEARCH_TITLE DB "SEARCH BY BOOK TITLE$"
+	HEARDER_SEARCH_GENRE DB "SEARCH BY BOOK GENRE$"
+	HEARDER_SEARCH_AUTHOR DB "SEARCH BY BOOK AUTHOR$"
+	HEARDER_SEARCH_ALL DB "ALL BOOK$"
+	QUESTION_ONE DB "Enter your choice: $"
+	QUESTION_TWO DB "Enter your choice (Enter 1 for Horror): $"
+	QUESTION_THREE DB "Do you want to search for another? : $"
+	QUESTION_FOUR DB "Please enter the author last name (LOKE XIN YEE = LOKE): $"
+	ERROR_MESSAGE_ONE DB "Invalid input. Please enter again.$"
+	ERROR_MESSAGE_TWO DB "Cannot found the book title. Please enter again.$"
+	ERROR_MESSAGE_THREE DB "Cannot found the author. Please enter again.$"
+	SEARCH_SELECTION_ONE DB ?
+    SEARCH_SELECTION_TWO DB ?
+	SEARCH_SELECTION_THREE DB ?
+	LINE DB "---------------------------$"
+	COLUMN_DIS_ALL_HEADERS DB 'No. Title       Price(RM)   Left Quantity   Genre         Author', 0DH, 0AH, '$'
+	ALL_PRICE_COLUMN_SPACE DB '       ', '$'
+	ALL_LQ_COLUMN_SPACE DB '             ', '$'
+	ALL_AUTHOR_COLUMN_SPACE DB '   ', '$'
 ;;;;;
 
 
@@ -111,7 +189,7 @@
 	ORDER_CONFIRMATION_MESSAGE DB "Confirm to Place Order?$"
 	ORDER_CONFIRM DB "Confirm$"
 	ORDER_CANCEL_MESSAGE DB "Payment cancelled.$"
-	ORDER_CONFIRM_MESSAGE DB "Payment has made successfully!!!$"
+	ORDER_CONFIRM_MESSAGE DB "Payment has made successfully!!!", 0AH,0DH, "$"
 	ENTAGN DB "1.  Enter again$"
     CANCEL_PAYMENT_MESSAGE DB "2.  Cancel Payment$"
 	DOT DB ".  $"
@@ -130,7 +208,6 @@
 	GRAND_TOTAL_AMOUNT_PREFIX DB "                           $"
 
 	;ITERATTION COUNT
-	COUNT_PAYMENT_MADE DW 0
 	PAYMENT_LOOP_COUNT DB ?
     TEMP_BOOK_QUANTITY DW ?
 
@@ -268,15 +345,15 @@ MAIN PROC
 
     CMP MAIN_MENU_SELECTION,'1'
     JNE CHECK_NEXT
-    ;CREATE ORDER FUNCTION
-    ;CALL       ;CALL SEARCH FUNCTION IN HERE
+    ;SEARCH BOOK FUNCTION
+    CALL SEARCH_BOOK_FUNCTION_MAIN
     JMP MAIN_AGAIN
 
     CHECK_NEXT:
     CMP MAIN_MENU_SELECTION,'2'
     JNE CHECK_NEXT_TWO
     ;CREATE ORDER FUNCTION
-    CALL CREATE_ORDER_FUNCTION_MAIN      ;CALL PAYMENT FUNCTION IN HERE
+    CALL CREATE_ORDER_FUNCTION_MAIN      ;CALL PAYMENT FUNCTION IN CREATE ORDER FUNCTION
     JMP MAIN_AGAIN
 
 
@@ -438,6 +515,3146 @@ MAIN ENDP
 
 
     LOGIN_FUNCTION ENDP
+;;;;;
+
+
+
+
+;SEARCH_BOOK_FUNCTION
+    SEARCH_BOOK_FUNCTION_MAIN PROC
+        CALL MENU 
+
+        CONTINUE_9:
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,QUESTION_THREE
+        INT 21H
+
+        ;get input
+        MOV AH,01H
+        INT 21H
+        MOV SEARCH_SELECTION_THREE,AL
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        CMP SEARCH_SELECTION_THREE,'Y'
+        JNE FIN_M
+
+        CALL MENU    
+
+        FIN_M:
+        RET
+    SEARCH_BOOK_FUNCTION_MAIN ENDP
+
+
+    AUTHOR_F PROC
+        MOV AX,@DATA
+        MOV DS,AX
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,LINE
+        INT 21H
+
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,HEARDER_SEARCH_AUTHOR
+        INT 21H
+
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,LINE
+        INT 21H
+
+        AUTHOR_L:
+        ;Ask user enter the author name
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,QUESTION_FOUR
+        INT 21H
+
+        ;get input in string
+        MOV AH,0AH
+        LEA DX,SEARCH_INPUT_STRING
+        INT 21H
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,LINE
+        INT 21H
+
+        LEA DX,NL
+        INT 21H
+
+        ;Compare with KOH
+        KOH_CBC:
+        MOV CL,ACTS
+        MOV SI,1
+        MOV DI,0
+        MOV BL,0
+        KOH:
+
+            MOV BH,AUTHOR1[SI]
+            CMP INPUTSTR[DI],BH
+            JNE CHIAM_CBC
+
+            INC SI
+            INC DI
+            INC BL
+
+        LOOP KOH
+
+            KOH_LENGTH:
+            MOV SI,0
+            MOV DL,BL
+            ADD DL,30H
+            CMP DL,AUTHOR1[SI]
+            JNE CHIAM_CBC
+
+            JMP WP
+
+        ;Compare with CHIAM
+        CHIAM_CBC:
+        MOV CL,ACTS
+        MOV SI,6
+        MOV DI,0
+        MOV BL,0
+        CHIAM:
+
+            MOV BH,AUTHOR1[SI]
+            CMP INPUTSTR[DI],BH
+            JNE LAU_CBC
+
+            INC SI
+            INC DI
+            INC BL
+
+        LOOP CHIAM
+
+            CHIAM_LENGTH:
+            MOV SI,5
+            MOV DL,BL
+            ADD DL,30H
+            CMP DL,AUTHOR1[SI]
+            JNE LAU_CBC
+
+            JMP LK
+
+        ;Compare with LAU
+        LAU_CBC:
+        MOV CL,ACTS
+        MOV SI,13
+        MOV DI,0
+        MOV BL,0
+        LAU:
+
+            MOV BH,AUTHOR1[SI]
+            CMP INPUTSTR[DI],BH
+            JNE LOKE_CBC
+
+            INC SI
+            INC DI
+            INC BL
+
+        LOOP LAU
+
+            LAU_LENGTH:
+            MOV SI,12
+            MOV DL,BL
+            ADD DL,30H
+            CMP DL,AUTHOR1[SI]
+            JNE LOKE_CBC
+
+            JMP RD
+
+        ;Compare with LOKE
+        LOKE_CBC:
+        MOV CL,ACTS
+        MOV SI,18
+        MOV DI,0
+        MOV BL,0
+        LOKE:
+
+            MOV BH,AUTHOR1[SI]
+            CMP INPUTSTR[DI],BH
+            JNE ER
+
+            INC SI
+            INC DI
+            INC BL
+
+        LOOP LOKE
+
+            LOKE_LENGTH:
+            MOV SI,17
+            MOV DL,BL
+            ADD DL,30H
+            CMP DL,AUTHOR1[SI]
+            JNE ER
+
+            JMP SD
+            
+
+        ER:
+        JMP ERROR_A
+
+        WP:
+        MOV AH,09H
+        LEA DX,D_TITLE
+        INT 21H
+
+        ;WHISPERS
+        ;Display bookname
+        MOV SI,OFFSET BOOK
+        ADD SI,0
+        MOV AX,[SI]             ; Load the offset of the second book name into AX
+        MOV DX,AX               ; Move the offset into DX (required for INT 21H)
+        MOV AH,09H              ; DOS print string function
+        INT 21H      
+
+        LEA DX,NL
+        INT 21H 
+
+        LEA DX,D_PRICE
+        INT 21H  
+        
+        ;Display bookprice
+        ;Price
+        ; Load the floating-point values into the FPU and multiply
+        MOV DI,0
+        FLD DWORD PTR [Price[DI]]  ; Load num1 into the FPU stack
+        FILD WORD PTR [factor] ; Load factor
+        FMUL                  ; Multiply result by factor to scale
+        FISTP result          ; Store integer part in result
+
+        CALL DISPF  ;below no need, do until here is cukup   
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_LQ
+        INT 21H
+
+        ;Display left quantity
+        MOV SI,0
+        MOV AH,0H
+        MOV AX,LeftQuantity[SI]
+        DIV HUNDRED
+        MOV BX,AX
+
+        MOV AH,02H
+        MOV DL,BL
+        ADD DL,30H
+        INT 21H
+        
+        MOV AH,0H
+        MOV AL,BH
+        DIV TEN 
+        MOV BX,AX
+
+        MOV AH,02H
+        MOV DL,BL
+        ADD DL,30H
+        INT 21H
+        
+        MOV DL,BH
+        ADD DL,30H
+        INT 21H
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_GENRE
+        INT 21H
+
+        ;Display book genre
+        MOV SI,OFFSET GENRE
+        ADD SI,0
+        MOV AX,[SI]            
+        MOV DX,AX             
+        MOV AH,09H           
+        INT 21H 
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        EH:
+        MOV AH,09H
+        LEA DX,D_TITLE
+        INT 21H
+
+        ;ECHO
+        ;Display bookname
+        MOV SI,OFFSET BOOK
+        ADD SI,2
+        MOV AX, [SI]             ; Load the offset of the second book name into AX
+        MOV DX, AX               ; Move the offset into DX (required for INT 21H)
+        MOV AH, 09H              ; DOS print string function
+        INT 21H      
+
+        LEA DX,NL
+        INT 21H 
+
+        LEA DX,D_PRICE
+        INT 21H  
+        
+        ;Display bookprice
+        ;Price
+        ; Load the floating-point values into the FPU and multiply
+        MOV DI,4
+        FLD DWORD PTR [Price[DI]]  ; Load num1 into the FPU stack
+        FILD WORD PTR [factor] ; Load factor
+        FMUL                  ; Multiply result by factor to scale
+        FISTP result          ; Store integer part in result
+
+        CALL DISPF  ;below no need, do until here is cukup
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_LQ
+        INT 21H
+
+        ;Display left quantity
+        MOV SI,2
+        MOV AH,0H
+        MOV AX,LeftQuantity[SI]
+        DIV HUNDRED
+        MOV BX,AX
+
+        MOV AH,02H
+        MOV DL,BL
+        ADD DL,30H
+        INT 21H
+        
+        MOV AH,0H
+        MOV AL,BH
+        DIV TEN 
+        MOV BX,AX
+
+        MOV AH,02H
+        MOV DL,BL
+        ADD DL,30H
+        INT 21H
+        
+        MOV DL,BH
+        ADD DL,30H
+        INT 21H
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_GENRE
+        INT 21H
+
+        ;Display book genre
+        MOV SI,OFFSET GENRE
+        ADD SI,2
+        MOV AX,[SI]            
+        MOV DX,AX             
+        MOV AH,09H           
+        INT 21H 
+
+        JMP CONTINUE_9
+
+        LK:
+        MOV AH,09H 
+        LEA DX,D_TITLE
+        INT 21H
+
+        ;LOCKET
+        ;Display bookname
+        MOV SI,OFFSET BOOK
+        ADD SI,4
+        MOV AX, [SI]             ; Load the offset of the second book name into AX
+        MOV DX, AX               ; Move the offset into DX (required for INT 21H)
+        MOV AH, 09H              ; DOS print string function
+        INT 21H      
+
+        LEA DX,NL
+        INT 21H 
+
+        LEA DX,D_PRICE
+        INT 21H  
+        
+        ;Display bookprice
+        ;Price
+        ; Load the floating-point values into the FPU and multiply
+        MOV DI,8
+        FLD DWORD PTR [Price[DI]]  ; Load num1 into the FPU stack
+        FILD WORD PTR [factor] ; Load factor
+        FMUL                  ; Multiply result by factor to scale
+        FISTP result          ; Store integer part in result
+
+        CALL DISPF  ;below no need, do until here is cukup   
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_LQ
+        INT 21H
+
+        ;Display left quantity
+        MOV SI,4
+        MOV AH,0H
+        MOV AX,LeftQuantity[SI]
+        DIV HUNDRED
+        MOV BX,AX
+
+        MOV AH,02H
+        MOV DL,BL
+        ADD DL,30H
+        INT 21H
+        
+        MOV AH,0H
+        MOV AL,BH
+        DIV TEN 
+        MOV BX,AX
+
+        MOV AH,02H
+        MOV DL,BL
+        ADD DL,30H
+        INT 21H
+        
+        MOV DL,BH
+        ADD DL,30H
+        INT 21H
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_GENRE
+        INT 21H
+
+        ;Display book genre
+        MOV SI,OFFSET GENRE
+        ADD SI,4
+        MOV AX,[SI]            
+        MOV DX,AX             
+        MOV AH,09H           
+        INT 21H 
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+
+        WL:
+        MOV AH,09H
+        LEA DX,D_TITLE
+        INT 21H
+
+        ;WILLOW
+        ;Display bookname
+        MOV SI,OFFSET BOOK
+        ADD SI,6
+        MOV AX,[SI]             ; Load the offset of the second book name into AX
+        MOV DX,AX               ; Move the offset into DX (required for INT 21H)
+        MOV AH,09H              ; DOS print string function
+        INT 21H      
+
+        LEA DX,NL
+        INT 21H 
+
+        LEA DX,D_PRICE
+        INT 21H  
+        
+        ;Display bookprice
+        ;Price
+        ; Load the floating-point values into the FPU and multiply
+        MOV DI,12
+        FLD DWORD PTR [Price[DI]]  ; Load num1 into the FPU stack
+        FILD WORD PTR [factor] ; Load factor
+        FMUL                  ; Multiply result by factor to scale
+        FISTP result          ; Store integer part in result
+
+        CALL DISPF  ;below no need, do until here is cukup    
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_LQ
+        INT 21H
+
+        ;Display left quantity
+        MOV SI,6
+        MOV AH,0H
+        MOV AX,LeftQuantity[SI]
+        DIV HUNDRED
+        MOV BX,AX
+
+        MOV AH,02H
+        MOV DL,BL
+        ADD DL,30H
+        INT 21H
+        
+        MOV AH,0H
+        MOV AL,BH
+        DIV TEN 
+        MOV BX,AX
+
+        MOV AH,02H
+        MOV DL,BL
+        ADD DL,30H
+        INT 21H
+        
+        MOV DL,BH
+        ADD DL,30H
+        INT 21H
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_GENRE
+        INT 21H
+
+        ;Display book genre
+        MOV SI,OFFSET GENRE
+        ADD SI,6
+        MOV AX,[SI]            
+        MOV DX,AX             
+        MOV AH,09H           
+        INT 21H 
+        
+        JMP CONTINUE_9
+
+        RD:
+        MOV AH,09H
+        LEA DX,D_TITLE
+        INT 21H
+
+        ;Display bookname
+        MOV SI,OFFSET BOOK
+        ADD SI,8
+        MOV AX,[SI]             ; Load the offset of the second book name into AX
+        MOV DX,AX               ; Move the offset into DX (required for INT 21H)
+        MOV AH,09H              ; DOS print string function
+        INT 21H      
+
+        LEA DX,NL
+        INT 21H 
+
+        LEA DX,D_PRICE
+        INT 21H  
+        
+        ;Display bookprice
+        ;Price
+        ; Load the floating-point values into the FPU and multiply
+        MOV DI,16
+        FLD DWORD PTR [Price[DI]]  ; Load num1 into the FPU stack
+        FILD WORD PTR [factor] ; Load factor
+        FMUL                  ; Multiply result by factor to scale
+        FISTP result          ; Store integer part in result
+
+        CALL DISPF  ;below no need, do until here is cukup    
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_LQ
+        INT 21H
+
+        ;Display left quantity
+        MOV SI,8
+        MOV AH,0H
+        MOV AX,LeftQuantity[SI]
+        DIV HUNDRED
+        MOV BX,AX
+
+        MOV AH,02H
+        MOV DL,BL
+        ADD DL,30H
+        INT 21H
+        
+        MOV AH,0H
+        MOV AL,BH
+        DIV TEN 
+        MOV BX,AX
+
+        MOV AH,02H
+        MOV DL,BL
+        ADD DL,30H
+        INT 21H
+        
+        MOV DL,BH
+        ADD DL,30H
+        INT 21H
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_GENRE
+        INT 21H
+
+        ;Display book genre
+        MOV SI,OFFSET GENRE
+        ADD SI,8
+        MOV AX,[SI]            
+        MOV DX,AX             
+        MOV AH,09H           
+        INT 21H 
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+
+        CR:
+        MOV AH,09H
+        LEA DX,D_TITLE
+        INT 21H
+
+        ;CRIMSON
+        ;Display bookname
+        MOV SI,OFFSET BOOK
+        ADD SI,10
+        MOV AX,[SI]             ; Load the offset of the second book name into AX
+        MOV DX,AX               ; Move the offset into DX (required for INT 21H)
+        MOV AH,09H              ; DOS print string function
+        INT 21H      
+
+        LEA DX,NL
+        INT 21H 
+
+        LEA DX,D_PRICE
+        INT 21H  
+        
+        ;Display bookprice
+        ;Price
+        ; Load the floating-point values into the FPU and multiply
+        MOV DI,20
+        FLD DWORD PTR [Price[DI]]  ; Load num1 into the FPU stack
+        FILD WORD PTR [factor] ; Load factor
+        FMUL                  ; Multiply result by factor to scale
+        FISTP result          ; Store integer part in result
+
+        CALL DISPF  ;below no need, do until here is cukup    
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_LQ
+        INT 21H
+
+        ;Display left quantity
+        MOV SI,10
+        MOV AH,0H
+        MOV AX,LeftQuantity[SI]
+        DIV HUNDRED
+        MOV BX,AX
+
+        MOV AH,02H
+        MOV DL,BL
+        ADD DL,30H
+        INT 21H
+        
+        MOV AH,0H
+        MOV AL,BH
+        DIV TEN 
+        MOV BX,AX
+
+        MOV AH,02H
+        MOV DL,BL
+        ADD DL,30H
+        INT 21H
+        
+        MOV DL,BH
+        ADD DL,30H
+        INT 21H
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_GENRE
+        INT 21H
+
+        ;Display book genre
+        MOV SI,OFFSET GENRE
+        ADD SI,10
+        MOV AX,[SI]            
+        MOV DX,AX             
+        MOV AH,09H           
+        INT 21H 
+        
+        JMP CONTINUE_9
+
+        SD:
+        MOV AH,09H
+        LEA DX,D_TITLE
+        INT 21H
+
+        ;Display bookname
+        MOV SI,OFFSET BOOK
+        ADD SI,12
+        MOV AX, [SI]             ; Load the offset of the second book name into AX
+        MOV DX, AX               ; Move the offset into DX (required for INT 21H)
+        MOV AH, 09H              ; DOS print string function
+        INT 21H      
+
+        LEA DX,NL
+        INT 21H 
+
+        LEA DX,D_PRICE
+        INT 21H  
+        
+        ;Display bookprice
+        ;Price
+        ; Load the floating-point values into the FPU and multiply
+        MOV DI,24
+        FLD DWORD PTR [Price[DI]]  ; Load num1 into the FPU stack
+        FILD WORD PTR [factor] ; Load factor
+        FMUL                  ; Multiply result by factor to scale
+        FISTP result          ; Store integer part in result
+
+        CALL DISPF  ;below no need, do until here is cukup    
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_LQ
+        INT 21H
+
+        ;Display left quantity
+        MOV SI,12
+        MOV AH,0H
+        MOV AX,LeftQuantity[SI]
+        DIV HUNDRED
+        MOV BX,AX
+
+        MOV AH,02H
+        MOV DL,BL
+        ADD DL,30H
+        INT 21H
+        
+        MOV AH,0H
+        MOV AL,BH
+        DIV TEN 
+        MOV BX,AX
+
+        MOV AH,02H
+        MOV DL,BL
+        ADD DL,30H
+        INT 21H
+        
+        MOV DL,BH
+        ADD DL,30H
+        INT 21H
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_GENRE
+        INT 21H
+
+        ;Display book genre
+        MOV SI,OFFSET GENRE
+        ADD SI,12
+        MOV AX, [SI]            
+        MOV DX, AX             
+        MOV AH, 09H           
+        INT 21H 
+        
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        MM:
+        MOV AH,09H
+        LEA DX,D_TITLE
+        INT 21H
+
+        ;Display bookname
+        MOV SI,OFFSET BOOK
+        ADD SI,14
+        MOV AX,[SI]             ; Load the offset of the second book name into AX
+        MOV DX,AX               ; Move the offset into DX (required for INT 21H)
+        MOV AH,09H              ; DOS print string function
+        INT 21H      
+
+        LEA DX,NL
+        INT 21H 
+
+        LEA DX,D_PRICE
+        INT 21H  
+        
+        ;Display bookprice
+        ;Price
+        ; Load the floating-point values into the FPU and multiply
+        MOV DI,28
+        FLD DWORD PTR [Price[DI]]  ; Load num1 into the FPU stack
+        FILD WORD PTR [factor] ; Load factor
+        FMUL                  ; Multiply result by factor to scale
+        FISTP result          ; Store integer part in result
+
+        CALL DISPF  ;below no need, do until here is cukup   
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_LQ
+        INT 21H
+
+        ;Display left quantity
+        MOV SI,14
+        MOV AH,0H
+        MOV AX,LeftQuantity[SI]
+        DIV HUNDRED
+        MOV BX,AX
+
+        MOV AH,02H
+        MOV DL,BL
+        ADD DL,30H
+        INT 21H
+        
+        MOV AH,0H
+        MOV AL,BH
+        DIV TEN 
+        MOV BX,AX
+
+        MOV AH,02H
+        MOV DL,BL
+        ADD DL,30H
+        INT 21H
+        
+        MOV DL,BH
+        ADD DL,30H
+        INT 21H
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_GENRE
+        INT 21H
+
+        ;Display book Genre
+        MOV SI,OFFSET GENRE
+        ADD SI,14
+        MOV AX,[SI]            
+        MOV DX,AX             
+        MOV AH,09H           
+        INT 21H  
+        
+        JMP CONTINUE_9
+        
+
+        ;Invalid input
+        ERROR_A:
+                MOV AH,09H
+                LEA DX,ERROR_MESSAGE_THREE
+                INT 21H
+
+                LEA DX,NL
+                INT 21H
+                JMP AUTHOR_L
+
+
+        FIN_A:
+        MOV AX,4C00H
+        INT 21H
+
+    AUTHOR_F ENDP
+
+
+    TITLE_F PROC
+        MOV AX,@DATA
+        MOV DS,AX
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,LINE
+        INT 21H
+
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,HEARDER_SEARCH_TITLE
+        INT 21H
+
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,LINE
+        INT 21H
+
+        TITLE_L:
+        ;Ask user enter the book title
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,INPUT_BOOK_TITLE
+        INT 21H
+
+        ;get input in string
+        MOV AH,0AH
+        LEA DX,SEARCH_INPUT_STRING
+        INT 21H
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,LINE
+        INT 21H
+
+        LEA DX,NL
+        INT 21H
+
+        ;Compare with WHISPERS
+        WHISPERS_CBC:
+        MOV CL,ACTS
+        MOV SI,1
+        MOV DI,0
+        MOV BL,-1
+        L2:
+
+            MOV BH,BOOKNAME_FOR_SEARCH[SI]
+            CMP INPUTSTR[DI],BH
+            JNE ECHO_CBC
+
+            INC SI
+            INC DI
+            INC BL
+
+        LOOP L2
+
+            WHISPERS_LENGTH:
+            MOV SI,0
+            MOV DL,BL
+            ADD DL,30H
+            CMP DL,BOOKNAME_FOR_SEARCH[SI]
+            JNE ECHO_CBC
+
+            JMP WP1
+
+
+        ;Compare with ECHO
+        ECHO_CBC:
+        MOV CL,ACTS
+        MOV SI,11
+        MOV DI,0
+        MOV BL,0
+        L3:
+
+            MOV AL,BOOKNAME_FOR_SEARCH[SI]
+            CMP INPUTSTR[DI],AL
+            JNE LOCKET_CBC
+
+            INC SI
+            INC DI
+            INC BL
+
+        LOOP L3
+
+            ECHO_LENGTH:
+            MOV SI,10
+            MOV DL,BL
+            ADD DL,30H
+            CMP DL,BOOKNAME_FOR_SEARCH[SI]
+            JNE LOCKET_CBC
+
+            JMP EH1
+
+        ;Compare with LOCKET
+        LOCKET_CBC:
+        MOV CL,ACTS
+        MOV SI,17
+        MOV DI,0
+        MOV BL,0
+        L4:
+
+            MOV AL,BOOKNAME_FOR_SEARCH[SI]
+            CMP INPUTSTR[DI],AL
+            JNE WILLOW_CBC
+
+            INC SI
+            INC DI
+            INC BL
+
+        LOOP L4
+
+            LOCKET_LENGTH:
+            MOV SI,16
+            MOV DL,BL
+            ADD DL,30H
+            CMP DL,BOOKNAME_FOR_SEARCH[SI]
+            JNE WILLOW_CBC
+
+            JMP LK1
+
+        ;Compare with WILLOW
+        WILLOW_CBC:
+        MOV CL,ACTS
+        MOV SI,25
+        MOV DI,0
+        MOV BL,0
+        L5:
+
+            MOV AL,BOOKNAME_FOR_SEARCH[SI]
+            CMP INPUTSTR[DI],AL
+            JNE RD_CBC
+
+            INC SI
+            INC DI
+            INC BL
+
+        LOOP L5
+
+            WILLOW_LENGTH:
+            MOV SI,24
+            MOV DL,BL
+            ADD DL,30H
+            CMP DL,BOOKNAME_FOR_SEARCH[SI]
+            JNE RD_CBC
+
+            JMP WL1
+
+        ;Compare with Rendezvous
+        RD_CBC:
+        MOV CL,ACTS
+        MOV SI,34
+        MOV DI,0
+        MOV BX,0
+        L6:
+
+            MOV AL,BOOKNAME_FOR_SEARCH[SI]
+            CMP INPUTSTR[DI],AL
+            JNE CRIMSON_CBC
+
+            INC SI
+            INC DI
+            INC BX
+
+        LOOP L6
+
+            ;ERROR CODE
+            ;MOV SI,32
+            ;MOV DL,BL
+            ;ADD DL,30H
+            ;CMP DL,BOOKNAME_FOR_SEARCH[SI]
+            ;JNE E
+
+            JMP RD1
+
+        ;Compare with Crimson
+        CRIMSON_CBC:
+        MOV CL,ACTS
+        MOV SI,46
+        MOV DI,0
+        MOV BL,0
+        L7:
+
+            MOV AL,BOOKNAME_FOR_SEARCH[SI]
+            CMP INPUTSTR[DI],AL
+            JNE SHADOWS_CBC
+
+            INC SI
+            INC DI
+            INC BL
+
+        LOOP L7
+
+            CRIMSON_LENGTH:
+            MOV SI,45
+            MOV DL,BL
+            ADD DL,30H
+            CMP DL,BOOKNAME_FOR_SEARCH[SI]
+            JNE SHADOWS_CBC
+
+            JMP CR1
+
+        ;Compare with SHADOWS
+        SHADOWS_CBC:
+        MOV CL,ACTS
+        MOV SI,55
+        MOV DI,0
+        MOV BL,0
+        L8:
+
+            MOV AL,BOOKNAME_FOR_SEARCH[SI]
+            CMP INPUTSTR[DI],AL
+            JNE MEMORIES_CBC
+
+            INC SI
+            INC DI
+            INC BL
+
+        LOOP L8
+
+            SHADOWS_LENGTH:
+            MOV SI,54
+            MOV DL,BL
+            ADD DL,30H
+            CMP DL,BOOKNAME_FOR_SEARCH[SI]
+            JNE MEMORIES_CBC
+
+            JMP SD1
+
+        ;Compare with MEMORIES
+        MEMORIES_CBC:
+        MOV CL,ACTS
+        MOV SI,64
+        MOV DI,0
+        MOV BL,0
+        L9:
+
+            MOV AL,BOOKNAME_FOR_SEARCH[SI]
+            CMP INPUTSTR[DI],AL
+            JNE ER2
+
+            INC SI
+            INC DI
+            INC BL
+
+        LOOP L9
+
+            MEMORIES_LENGTH:
+            MOV SI,63
+            MOV DL,BL
+            ADD DL,30H
+            CMP DL,BOOKNAME_FOR_SEARCH[SI]
+            JNE ER2
+
+            JMP MM1
+
+        ER2:
+            JMP ERROR_T
+
+
+        WP1:
+
+        MOV AH,09H
+        LEA DX,D_TITLE
+        INT 21H
+
+        ;WHISPERS
+        ;Display bookname
+        MOV SI,OFFSET BOOK
+        ADD SI,0
+        MOV AX,[SI]             ; Load the offset of the second book name into AX
+        MOV DX,AX               ; Move the offset into DX (required for INT 21H)
+        MOV AH,09H              ; DOS print string function
+        INT 21H      
+
+        LEA DX,NL
+        INT 21H 
+
+        LEA DX,D_PRICE
+        INT 21H  
+        
+        ;Display bookprice
+        ;Price
+        ; Load the floating-point values into the FPU and multiply
+        MOV DI,0
+        FLD DWORD PTR [Price[DI]]  ; Load num1 into the FPU stack
+        FILD WORD PTR [factor] ; Load factor
+        FMUL                  ; Multiply result by factor to scale
+        FISTP result          ; Store integer part in result
+
+        CALL DISPF  ;below no need, do until here is cukup    
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_LQ
+        INT 21H
+
+        ;Display left quantity
+        MOV SI,0
+        MOV AH,0H
+        MOV AX,LeftQuantity[SI]
+        DIV HUNDRED
+        MOV BX,AX
+
+        MOV AH,02H
+        MOV DL,BL
+        ADD DL,30H
+        INT 21H
+        
+        MOV AH,0H
+        MOV AL,BH
+        DIV TEN 
+        MOV BX,AX
+
+        MOV AH,02H
+        MOV DL,BL
+        ADD DL,30H
+        INT 21H
+        
+        MOV DL,BH
+        ADD DL,30H
+        INT 21H
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_GENRE
+        INT 21H
+
+        ;Display book genre
+        MOV SI,OFFSET GENRE
+        ADD SI,0
+        MOV AX,[SI]            
+        MOV DX,AX             
+        MOV AH,09H           
+        INT 21H 
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        ;display author
+        LEA DX,D_AUTHOR
+        INT 21H
+
+        MOV SI,OFFSET AUTHOR
+        ADD SI,0
+        MOV AX,[SI]            
+        MOV DX,AX             
+        MOV AH,09H           
+        INT 21H 
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+        JMP CONTINUE_9
+
+        EH1:
+
+        MOV AH,09H
+        LEA DX,D_TITLE
+        INT 21H
+
+        ;ECHO
+        ;Display bookname
+        MOV SI,OFFSET BOOK
+        ADD SI,2
+        MOV AX, [SI]             ; Load the offset of the second book name into AX
+        MOV DX, AX               ; Move the offset into DX (required for INT 21H)
+        MOV AH, 09H              ; DOS print string function
+        INT 21H      
+
+        LEA DX,NL
+        INT 21H 
+
+        LEA DX,D_PRICE
+        INT 21H  
+        
+        ;Display bookprice
+        ;Price
+        ; Load the floating-point values into the FPU and multiply
+        MOV DI,4
+        FLD DWORD PTR [Price[DI]]  ; Load num1 into the FPU stack
+        FILD WORD PTR [factor] ; Load factor
+        FMUL                  ; Multiply result by factor to scale
+        FISTP result          ; Store integer part in result
+
+        CALL DISPF  ;below no need, do until here is cukup    
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_LQ
+        INT 21H
+
+        ;Display left quantity
+        MOV SI,2
+        MOV AH,0H
+        MOV AX,LeftQuantity[SI]
+        DIV HUNDRED
+        MOV BX,AX
+
+        MOV AH,02H
+        MOV DL,BL
+        ADD DL,30H
+        INT 21H
+        
+        MOV AH,0H
+        MOV AL,BH
+        DIV TEN 
+        MOV BX,AX
+
+        MOV AH,02H
+        MOV DL,BL
+        ADD DL,30H
+        INT 21H
+        
+        MOV DL,BH
+        ADD DL,30H
+        INT 21H
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_GENRE
+        INT 21H
+
+        ;Display book genre
+        MOV SI,OFFSET GENRE
+        ADD SI,2
+        MOV AX,[SI]            
+        MOV DX,AX             
+        MOV AH,09H           
+        INT 21H 
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        ;display author
+        LEA DX,D_AUTHOR
+        INT 21H
+
+        MOV SI,OFFSET AUTHOR
+        ADD SI,2
+        MOV AX,[SI]            
+        MOV DX,AX             
+        MOV AH,09H           
+        INT 21H 
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        JMP CONTINUE_9
+
+
+        LK1:
+
+        MOV AH,09H 
+        LEA DX,D_TITLE
+        INT 21H
+
+        ;LOCKET
+        ;Display bookname
+        MOV SI,OFFSET BOOK
+        ADD SI,4
+        MOV AX, [SI]             ; Load the offset of the second book name into AX
+        MOV DX, AX               ; Move the offset into DX (required for INT 21H)
+        MOV AH, 09H              ; DOS print string function
+        INT 21H      
+
+        LEA DX,NL
+        INT 21H 
+
+        LEA DX,D_PRICE
+        INT 21H  
+        
+        ;Display bookprice
+        ;Price
+        ; Load the floating-point values into the FPU and multiply
+        MOV DI,8
+        FLD DWORD PTR [Price[DI]]  ; Load num1 into the FPU stack
+        FILD WORD PTR [factor] ; Load factor
+        FMUL                  ; Multiply result by factor to scale
+        FISTP result          ; Store integer part in result
+
+        CALL DISPF  ;below no need, do until here is cukup      
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_LQ
+        INT 21H
+
+        ;Display left quantity
+        MOV SI,4
+        MOV AH,0H
+        MOV AX,LeftQuantity[SI]
+        DIV HUNDRED
+        MOV BX,AX
+
+        MOV AH,02H
+        MOV DL,BL
+        ADD DL,30H
+        INT 21H
+        
+        MOV AH,0H
+        MOV AL,BH
+        DIV TEN 
+        MOV BX,AX
+
+        MOV AH,02H
+        MOV DL,BL
+        ADD DL,30H
+        INT 21H
+        
+        MOV DL,BH
+        ADD DL,30H
+        INT 21H
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_GENRE
+        INT 21H
+
+        ;Display book genre
+        MOV SI,OFFSET GENRE
+        ADD SI,4
+        MOV AX,[SI]            
+        MOV DX,AX             
+        MOV AH,09H           
+        INT 21H  
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        ;display author
+        LEA DX,D_AUTHOR
+        INT 21H
+
+        MOV SI,OFFSET AUTHOR
+        ADD SI,4
+        MOV AX,[SI]            
+        MOV DX,AX             
+        MOV AH,09H           
+        INT 21H 
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        JMP CONTINUE_9
+
+        WL1:
+
+        MOV AH,09H
+        LEA DX,D_TITLE
+        INT 21H
+
+        ;WILLOW
+        ;Display bookname
+        MOV SI,OFFSET BOOK
+        ADD SI,6
+        MOV AX,[SI]             ; Load the offset of the second book name into AX
+        MOV DX,AX               ; Move the offset into DX (required for INT 21H)
+        MOV AH,09H              ; DOS print string function
+        INT 21H      
+
+        LEA DX,NL
+        INT 21H 
+
+        LEA DX,D_PRICE
+        INT 21H  
+        
+        ;Display bookprice
+        ;Price
+        ; Load the floating-point values into the FPU and multiply
+        MOV DI,12
+        FLD DWORD PTR [Price[DI]]  ; Load num1 into the FPU stack
+        FILD WORD PTR [factor] ; Load factor
+        FMUL                  ; Multiply result by factor to scale
+        FISTP result          ; Store integer part in result
+
+        CALL DISPF  ;below no need, do until here is cukup     
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_LQ
+        INT 21H
+
+        ;Display left quantity
+        MOV SI,6
+        MOV AH,0H
+        MOV AX,LeftQuantity[SI]
+        DIV HUNDRED
+        MOV BX,AX
+
+        MOV AH,02H
+        MOV DL,BL
+        ADD DL,30H
+        INT 21H
+        
+        MOV AH,0H
+        MOV AL,BH
+        DIV TEN 
+        MOV BX,AX
+
+        MOV AH,02H
+        MOV DL,BL
+        ADD DL,30H
+        INT 21H
+        
+        MOV DL,BH
+        ADD DL,30H
+        INT 21H
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_GENRE
+        INT 21H
+
+        ;Display book genre
+        MOV SI,OFFSET GENRE
+        ADD SI,6
+        MOV AX,[SI]            
+        MOV DX,AX             
+        MOV AH,09H           
+        INT 21H 
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        ;display author
+        LEA DX,D_AUTHOR
+        INT 21H
+
+        MOV SI,OFFSET AUTHOR
+        ADD SI,6
+        MOV AX,[SI]            
+        MOV DX,AX             
+        MOV AH,09H           
+        INT 21H 
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        JMP CONTINUE_9
+
+        RD1:
+
+        MOV AH,09H
+        LEA DX,D_TITLE
+        INT 21H
+
+        ;Display bookname
+        MOV SI,OFFSET BOOK
+        ADD SI,8
+        MOV AX,[SI]             ; Load the offset of the second book name into AX
+        MOV DX,AX               ; Move the offset into DX (required for INT 21H)
+        MOV AH,09H              ; DOS print string function
+        INT 21H      
+
+        LEA DX,NL
+        INT 21H 
+
+        LEA DX,D_PRICE
+        INT 21H  
+        
+        ;Display bookprice
+        ;Price
+        ; Load the floating-point values into the FPU and multiply
+        MOV DI,16
+        FLD DWORD PTR [Price[DI]]  ; Load num1 into the FPU stack
+        FILD WORD PTR [factor] ; Load factor
+        FMUL                  ; Multiply result by factor to scale
+        FISTP result          ; Store integer part in result
+
+        CALL DISPF  ;below no need, do until here is cukup     
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_LQ
+        INT 21H
+
+        ;Display left quantity
+        MOV SI,8
+        MOV AH,0H
+        MOV AX,LeftQuantity[SI]
+        DIV HUNDRED
+        MOV BX,AX
+
+        MOV AH,02H
+        MOV DL,BL
+        ADD DL,30H
+        INT 21H
+        
+        MOV AH,0H
+        MOV AL,BH
+        DIV TEN 
+        MOV BX,AX
+
+        MOV AH,02H
+        MOV DL,BL
+        ADD DL,30H
+        INT 21H
+        
+        MOV DL,BH
+        ADD DL,30H
+        INT 21H
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_GENRE
+        INT 21H
+
+        ;Display book genre
+        MOV SI,OFFSET GENRE
+        ADD SI,8
+        MOV AX,[SI]            
+        MOV DX,AX             
+        MOV AH,09H           
+        INT 21H 
+
+    MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        ;display author
+        LEA DX,D_AUTHOR
+        INT 21H
+
+        MOV SI,OFFSET AUTHOR
+        ADD SI,8
+        MOV AX,[SI]            
+        MOV DX,AX             
+        MOV AH,09H           
+        INT 21H 
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        JMP CONTINUE_9
+
+        CR1:
+
+        MOV AH,09H
+        LEA DX,D_TITLE
+        INT 21H
+
+        ;CRIMSON
+        ;Display bookname
+        MOV SI,OFFSET BOOK
+        ADD SI,10
+        MOV AX,[SI]             ; Load the offset of the second book name into AX
+        MOV DX,AX               ; Move the offset into DX (required for INT 21H)
+        MOV AH,09H              ; DOS print string function
+        INT 21H      
+
+        LEA DX,NL
+        INT 21H 
+
+        LEA DX,D_PRICE
+        INT 21H  
+        
+        ;Display bookprice
+        ;Price
+        ; Load the floating-point values into the FPU and multiply
+        MOV DI,20
+        FLD DWORD PTR [Price[DI]]  ; Load num1 into the FPU stack
+        FILD WORD PTR [factor] ; Load factor
+        FMUL                  ; Multiply result by factor to scale
+        FISTP result          ; Store integer part in result
+
+        CALL DISPF  ;below no need, do until here is cukup      
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_LQ
+        INT 21H
+
+        ;Display left quantity
+        MOV SI,10
+        MOV AH,0H
+        MOV AX,LeftQuantity[SI]
+        DIV HUNDRED
+        MOV BX,AX
+
+        MOV AH,02H
+        MOV DL,BL
+        ADD DL,30H
+        INT 21H
+        
+        MOV AH,0H
+        MOV AL,BH
+        DIV TEN 
+        MOV BX,AX
+
+        MOV AH,02H
+        MOV DL,BL
+        ADD DL,30H
+        INT 21H
+        
+        MOV DL,BH
+        ADD DL,30H
+        INT 21H
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_GENRE
+        INT 21H
+
+        ;Display book genre
+        MOV SI,OFFSET GENRE
+        ADD SI,10
+        MOV AX,[SI]            
+        MOV DX,AX             
+        MOV AH,09H           
+        INT 21H 
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        ;display author
+        LEA DX,D_AUTHOR
+        INT 21H
+
+        MOV SI,OFFSET AUTHOR
+        ADD SI,10
+        MOV AX,[SI]            
+        MOV DX,AX             
+        MOV AH,09H           
+        INT 21H 
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        JMP CONTINUE_9
+
+        SD1:
+
+        MOV AH,09H
+        LEA DX,D_TITLE
+        INT 21H
+
+        ;Display bookname
+        MOV SI,OFFSET BOOK
+        ADD SI,12
+        MOV AX, [SI]             ; Load the offset of the second book name into AX
+        MOV DX, AX               ; Move the offset into DX (required for INT 21H)
+        MOV AH, 09H              ; DOS print string function
+        INT 21H      
+
+        LEA DX,NL
+        INT 21H 
+
+        LEA DX,D_PRICE
+        INT 21H  
+        
+        ;Display bookprice
+        ;Price
+        ; Load the floating-point values into the FPU and multiply
+        MOV DI,24
+        FLD DWORD PTR [Price[DI]]  ; Load num1 into the FPU stack
+        FILD WORD PTR [factor] ; Load factor
+        FMUL                  ; Multiply result by factor to scale
+        FISTP result          ; Store integer part in result
+
+        CALL DISPF  ;below no need, do until here is cukup     
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_LQ
+        INT 21H
+
+        ;Display left quantity
+        MOV SI,12
+        MOV AH,0H
+        MOV AX,LeftQuantity[SI]
+        DIV HUNDRED
+        MOV BX,AX
+
+        MOV AH,02H
+        MOV DL,BL
+        ADD DL,30H
+        INT 21H
+        
+        MOV AH,0H
+        MOV AL,BH
+        DIV TEN 
+        MOV BX,AX
+
+        MOV AH,02H
+        MOV DL,BL
+        ADD DL,30H
+        INT 21H
+        
+        MOV DL,BH
+        ADD DL,30H
+        INT 21H
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_GENRE
+        INT 21H
+
+        ;Display book genre
+        MOV SI,OFFSET GENRE
+        ADD SI,12
+        MOV AX, [SI]            
+        MOV DX, AX             
+        MOV AH, 09H           
+        INT 21H 
+        
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        ;display author
+        LEA DX,D_AUTHOR
+        INT 21H
+
+        MOV SI,OFFSET AUTHOR
+        ADD SI,12
+        MOV AX,[SI]            
+        MOV DX,AX             
+        MOV AH,09H           
+        INT 21H 
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        JMP CONTINUE_9
+
+        MM1:
+
+        MOV AH,09H
+        LEA DX,D_TITLE
+        INT 21H
+
+        ;Display bookname
+        MOV SI,OFFSET BOOK
+        ADD SI,14
+        MOV AX,[SI]             ; Load the offset of the second book name into AX
+        MOV DX,AX               ; Move the offset into DX (required for INT 21H)
+        MOV AH,09H              ; DOS print string function
+        INT 21H      
+
+        LEA DX,NL
+        INT 21H 
+
+        LEA DX,D_PRICE
+        INT 21H  
+        
+        ;Display bookprice
+        ;Price
+        ; Load the floating-point values into the FPU and multiply
+        MOV DI,28
+        FLD DWORD PTR [Price[DI]]  ; Load num1 into the FPU stack
+        FILD WORD PTR [factor] ; Load factor
+        FMUL                  ; Multiply result by factor to scale
+        FISTP result          ; Store integer part in result
+
+        CALL DISPF  ;below no need, do until here is cukup     
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_LQ
+        INT 21H
+
+        ;Display left quantity
+        MOV SI,14
+        MOV AH,0H
+        MOV AX,LeftQuantity[SI]
+        DIV HUNDRED
+        MOV BX,AX
+
+        MOV AH,02H
+        MOV DL,BL
+        ADD DL,30H
+        INT 21H
+        
+        MOV AH,0H
+        MOV AL,BH
+        DIV TEN 
+        MOV BX,AX
+
+        MOV AH,02H
+        MOV DL,BL
+        ADD DL,30H
+        INT 21H
+        
+        MOV DL,BH
+        ADD DL,30H
+        INT 21H
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_GENRE
+        INT 21H
+
+        ;Display book Genre
+        MOV SI,OFFSET GENRE
+        ADD SI,14
+        MOV AX,[SI]            
+        MOV DX,AX             
+        MOV AH,09H           
+        INT 21H  
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        ;display author
+        LEA DX,D_AUTHOR
+        INT 21H
+
+        MOV SI,OFFSET AUTHOR
+        ADD SI,14
+        MOV AX,[SI]            
+        MOV DX,AX             
+        MOV AH,09H           
+        INT 21H 
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+        
+        JMP CONTINUE_9
+
+        ;Invalid input
+        ERROR_T:
+                MOV AH,09H
+                LEA DX,ERROR_MESSAGE_TWO
+                INT 21H
+
+                LEA DX,NL
+                INT 21H
+                JMP TITLE_L
+
+    TITLE_F ENDP
+
+
+    GENRE_F PROC
+        MOV AX,@DATA
+        MOV DS,AX
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,LINE
+        INT 21H
+
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,HEARDER_SEARCH_GENRE
+        INT 21H
+
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,LINE
+        INT 21H
+
+        GENRE_L:
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,H1
+        INT 21H
+
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,R1
+        INT 21H
+
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,A1
+        INT 21H
+
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,N1
+        INT 21H
+
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,EDUC
+        INT 21H
+
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,NL
+        INT 21H
+
+        ;ask user enter thier choose
+        LEA DX,QUESTION_TWO
+        INT 21H
+
+        ;get input
+        MOV AH,01H
+        INT 21H
+        SUB AL,30H
+        MOV SEARCH_SELECTION_TWO,AL
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        CMP SEARCH_SELECTION_TWO,1
+        JAE CONTINUE_3 
+        JMP ERROR_G     
+
+        CONTINUE_3:
+        CMP SEARCH_SELECTION_TWO,5
+        JBE CONTINUE_4  
+        JMP ERROR_G      
+
+        CONTINUE_4:
+        MOV AH,09H
+        LEA DX,CONFIRM_SELECTION
+        INT 21H
+
+        MOV AH,02H
+        MOV DL,SEARCH_SELECTION_TWO
+        ADD DL,30H
+        INT 21H
+
+        MOV AH,09H 
+        LEA DX,NL
+        INT 21H
+
+        ;If user enter 1 display Horror book
+        CMP SEARCH_SELECTION_TWO,1
+        JE HR
+
+        CMP SEARCH_SELECTION_TWO,2
+        JNE CONTINUE_5
+
+        JMP RM
+
+        CONTINUE_5:
+        CMP SEARCH_SELECTION_TWO,3
+        JNE CONTINUE_6
+
+        JMP AV
+
+        CONTINUE_6:
+        CMP SEARCH_SELECTION_TWO,4
+        JNE CONTINUE_7
+
+        JMP NF
+
+        CONTINUE_7:
+        CMP SEARCH_SELECTION_TWO,5
+        JNE ER3
+
+        JMP ED
+
+        ER3:
+        JMP ERROR_G
+
+        ;Horror
+        HR:
+        MOV AH,09H
+        LEA DX,LINE
+        INT 21H
+
+        LEA DX,NL
+        INT 21H
+
+        ;Display what genre now
+        LEA DX,HEARDER_H
+        INT 21H
+
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,LINE
+        INT 21H
+
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_TITLE
+        INT 21H
+
+        ;ECHO
+        ;Display bookname
+        MOV SI,OFFSET BOOK
+        ADD SI,2
+        MOV AX, [SI]             ; Load the offset of the second book name into AX
+        MOV DX, AX               ; Move the offset into DX (required for INT 21H)
+        MOV AH, 09H              ; DOS print string function
+        INT 21H      
+
+        LEA DX,NL
+        INT 21H 
+
+        LEA DX,D_PRICE
+        INT 21H  
+        
+        ;Display bookprice
+        ;Price
+        ; Load the floating-point values into the FPU and multiply
+        MOV DI,4
+        FLD DWORD PTR [Price[DI]]  ; Load num1 into the FPU stack
+        FILD WORD PTR [factor] ; Load factor
+        FMUL                  ; Multiply result by factor to scale
+        FISTP result          ; Store integer part in result
+
+        CALL DISPF  ;below no need, do until here is cukup       
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_LQ
+        INT 21H
+
+        ;Display left quantity
+        MOV SI,2
+        MOV AH,0H
+        MOV AX,LeftQuantity[SI]
+        DIV HUNDRED
+        MOV BX,AX
+
+        MOV AH,02H
+        MOV DL,BL
+        ADD DL,30H
+        INT 21H
+        
+        MOV AH,0H
+        MOV AL,BH
+        DIV TEN 
+        MOV BX,AX
+
+        MOV AH,02H
+        MOV DL,BL
+        ADD DL,30H
+        INT 21H
+        
+        MOV DL,BH
+        ADD DL,30H
+        INT 21H
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_AUTHOR
+        INT 21H
+
+        ;Display book author
+        MOV SI,OFFSET AUTHOR
+        ADD SI,2
+        MOV AX,[SI]            
+        MOV DX,AX             
+        MOV AH,09H           
+        INT 21H 
+        
+        ;SHADOWS
+        ;Second book
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_TITLE
+        INT 21H
+
+        ;Display bookname
+        MOV SI,OFFSET BOOK
+        ADD SI,12
+        MOV AX, [SI]             ; Load the offset of the second book name into AX
+        MOV DX, AX               ; Move the offset into DX (required for INT 21H)
+        MOV AH, 09H              ; DOS print string function
+        INT 21H      
+
+        LEA DX,NL
+        INT 21H 
+
+        LEA DX,D_PRICE
+        INT 21H  
+        
+        ;Display bookprice
+        ;Price
+        ; Load the floating-point values into the FPU and multiply
+        MOV DI,24
+        FLD DWORD PTR [Price[DI]]  ; Load num1 into the FPU stack
+        FILD WORD PTR [factor] ; Load factor
+        FMUL                  ; Multiply result by factor to scale
+        FISTP result          ; Store integer part in result
+
+        CALL DISPF  ;below no need, do until here is cukup     
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_LQ
+        INT 21H
+
+        ;Display left quantity
+        MOV SI,12
+        MOV AH,0H
+        MOV AX,LeftQuantity[SI]
+        DIV HUNDRED
+        MOV BX,AX
+
+        MOV AH,02H
+        MOV DL,BL
+        ADD DL,30H
+        INT 21H
+        
+        MOV AH,0H
+        MOV AL,BH
+        DIV TEN 
+        MOV BX,AX
+
+        MOV AH,02H
+        MOV DL,BL
+        ADD DL,30H
+        INT 21H
+        
+        MOV DL,BH
+        ADD DL,30H
+        INT 21H
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_AUTHOR
+        INT 21H
+
+        ;Display book author
+        MOV SI,OFFSET AUTHOR
+        ADD SI,12
+        MOV AX, [SI]            
+        MOV DX, AX             
+        MOV AH, 09H           
+        INT 21H 
+        JMP CONTINUE_9
+
+        ;Romance
+        RM:
+        MOV AH,09H
+        LEA DX,LINE
+        INT 21H
+
+        LEA DX,NL
+        INT 21H
+
+        ;Display what genre now
+        LEA DX,HEARDER_R
+        INT 21H
+
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,LINE
+        INT 21H
+
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_TITLE
+        INT 21H
+
+        ;WHISPERS
+        ;Display bookname
+        MOV SI,OFFSET BOOK
+        ADD SI,0
+        MOV AX,[SI]             ; Load the offset of the second book name into AX
+        MOV DX,AX               ; Move the offset into DX (required for INT 21H)
+        MOV AH,09H              ; DOS print string function
+        INT 21H      
+
+        LEA DX,NL
+        INT 21H 
+
+        LEA DX,D_PRICE
+        INT 21H  
+        
+        ;Display bookprice
+        ;Price
+        ; Load the floating-point values into the FPU and multiply
+        MOV DI,0
+        FLD DWORD PTR [Price[DI]]  ; Load num1 into the FPU stack
+        FILD WORD PTR [factor] ; Load factor
+        FMUL                  ; Multiply result by factor to scale
+        FISTP result          ; Store integer part in result
+
+        CALL DISPF  ;below no need, do until here is cukup     
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_LQ
+        INT 21H
+
+        ;Display left quantity
+        MOV SI,0
+        MOV AH,0H
+        MOV AX,LeftQuantity[SI]
+        DIV HUNDRED
+        MOV BX,AX
+
+        MOV AH,02H
+        MOV DL,BL
+        ADD DL,30H
+        INT 21H
+        
+        MOV AH,0H
+        MOV AL,BH
+        DIV TEN 
+        MOV BX,AX
+
+        MOV AH,02H
+        MOV DL,BL
+        ADD DL,30H
+        INT 21H
+        
+        MOV DL,BH
+        ADD DL,30H
+        INT 21H
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_AUTHOR
+        INT 21H
+
+        ;Display book author
+        MOV SI,OFFSET AUTHOR
+        ADD SI,0
+        MOV AX,[SI]            
+        MOV DX,AX             
+        MOV AH,09H           
+        INT 21H 
+        
+        ;MEMORIES
+        ;Second book
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_TITLE
+        INT 21H
+
+        ;Display bookname
+        MOV SI,OFFSET BOOK
+        ADD SI,14
+        MOV AX,[SI]             ; Load the offset of the second book name into AX
+        MOV DX,AX               ; Move the offset into DX (required for INT 21H)
+        MOV AH,09H              ; DOS print string function
+        INT 21H      
+
+        LEA DX,NL
+        INT 21H 
+
+        LEA DX,D_PRICE
+        INT 21H  
+        
+        ;Display bookprice
+        ;Price
+        ; Load the floating-point values into the FPU and multiply
+        MOV DI,28
+        FLD DWORD PTR [Price[DI]]  ; Load num1 into the FPU stack
+        FILD WORD PTR [factor] ; Load factor
+        FMUL                  ; Multiply result by factor to scale
+        FISTP result          ; Store integer part in result
+
+        CALL DISPF  ;below no need, do until here is cukup    
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_LQ
+        INT 21H
+
+        ;Display left quantity
+        MOV SI,14
+        MOV AH,0H
+        MOV AX,LeftQuantity[SI]
+        DIV HUNDRED
+        MOV BX,AX
+
+        MOV AH,02H
+        MOV DL,BL
+        ADD DL,30H
+        INT 21H
+        
+        MOV AH,0H
+        MOV AL,BH
+        DIV TEN 
+        MOV BX,AX
+
+        MOV AH,02H
+        MOV DL,BL
+        ADD DL,30H
+        INT 21H
+        
+        MOV DL,BH
+        ADD DL,30H
+        INT 21H
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_AUTHOR
+        INT 21H
+
+        ;Display book author
+        MOV SI,OFFSET AUTHOR
+        ADD SI,14
+        MOV AX,[SI]            
+        MOV DX,AX             
+        MOV AH,09H           
+        INT 21H 
+        
+        ;RENDEZVOUS
+        ;Third book
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_TITLE
+        INT 21H
+
+        ;Display bookname
+        MOV SI,OFFSET BOOK
+        ADD SI,8
+        MOV AX,[SI]             ; Load the offset of the second book name into AX
+        MOV DX,AX               ; Move the offset into DX (required for INT 21H)
+        MOV AH,09H              ; DOS print string function
+        INT 21H      
+
+        LEA DX,NL
+        INT 21H 
+
+        LEA DX,D_PRICE
+        INT 21H  
+        
+        ;Display bookprice
+        ;Price
+        ; Load the floating-point values into the FPU and multiply
+        MOV DI,16
+        FLD DWORD PTR [Price[DI]]  ; Load num1 into the FPU stack
+        FILD WORD PTR [factor] ; Load factor
+        FMUL                  ; Multiply result by factor to scale
+        FISTP result          ; Store integer part in result
+
+        CALL DISPF  ;below no need, do until here is cukup     
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_LQ
+        INT 21H
+
+        ;Display left quantity
+        MOV SI,8
+        MOV AH,0H
+        MOV AX,LeftQuantity[SI]
+        DIV HUNDRED
+        MOV BX,AX
+
+        MOV AH,02H
+        MOV DL,BL
+        ADD DL,30H
+        INT 21H
+        
+        MOV AH,0H
+        MOV AL,BH
+        DIV TEN 
+        MOV BX,AX
+
+        MOV AH,02H
+        MOV DL,BL
+        ADD DL,30H
+        INT 21H
+        
+        MOV DL,BH
+        ADD DL,30H
+        INT 21H
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_AUTHOR
+        INT 21H
+
+        ;Display book author
+        MOV SI,OFFSET AUTHOR
+        ADD SI,8
+        MOV AX,[SI]            
+        MOV DX,AX             
+        MOV AH,09H           
+        INT 21H 
+        JMP CONTINUE_9
+
+        ;Adventure
+        AV:
+        MOV AH,09H
+        LEA DX,LINE
+        INT 21H
+
+        LEA DX,NL
+        INT 21H
+
+        ;Display what genre now
+        LEA DX,HEARDER_A
+        INT 21H
+
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,LINE
+        INT 21H
+
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_TITLE
+        INT 21H
+
+        ;LOCKET
+        ;Display bookname
+        MOV SI,OFFSET BOOK
+        ADD SI,4
+        MOV AX, [SI]             ; Load the offset of the second book name into AX
+        MOV DX, AX               ; Move the offset into DX (required for INT 21H)
+        MOV AH, 09H              ; DOS print string function
+        INT 21H      
+
+        LEA DX,NL
+        INT 21H 
+
+        LEA DX,D_PRICE
+        INT 21H  
+        
+        ;Display bookprice
+        ;Price
+        ; Load the floating-point values into the FPU and multiply
+        MOV DI,8
+        FLD DWORD PTR [Price[DI]]  ; Load num1 into the FPU stack
+        FILD WORD PTR [factor] ; Load factor
+        FMUL                  ; Multiply result by factor to scale
+        FISTP result          ; Store integer part in result
+
+        CALL DISPF  ;below no need, do until here is cukup     
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_LQ
+        INT 21H
+
+        ;Display left quantity
+        MOV SI,4
+        MOV AH,0H
+        MOV AX,LeftQuantity[SI]
+        DIV HUNDRED
+        MOV BX,AX
+
+        MOV AH,02H
+        MOV DL,BL
+        ADD DL,30H
+        INT 21H
+        
+        MOV AH,0H
+        MOV AL,BH
+        DIV TEN 
+        MOV BX,AX
+
+        MOV AH,02H
+        MOV DL,BL
+        ADD DL,30H
+        INT 21H
+        
+        MOV DL,BH
+        ADD DL,30H
+        INT 21H
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_AUTHOR
+        INT 21H
+
+        ;Display book author
+        MOV SI,OFFSET AUTHOR
+        ADD SI,4
+        MOV AX,[SI]            
+        MOV DX,AX             
+        MOV AH,09H           
+        INT 21H 
+        JMP FIN_G
+
+        ;Non-fiction
+        NF:
+        MOV AH,09H
+        LEA DX,LINE
+        INT 21H
+
+        LEA DX,NL
+        INT 21H
+
+        ;Display what genre now
+        LEA DX,HEARDER_NF
+        INT 21H
+
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,LINE
+        INT 21H
+
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_TITLE
+        INT 21H
+
+        ;CRIMSON
+        ;Display bookname
+        MOV SI,OFFSET BOOK
+        ADD SI,10
+        MOV AX,[SI]             ; Load the offset of the second book name into AX
+        MOV DX,AX               ; Move the offset into DX (required for INT 21H)
+        MOV AH,09H              ; DOS print string function
+        INT 21H      
+
+        LEA DX,NL
+        INT 21H 
+
+        LEA DX,D_PRICE
+        INT 21H  
+        
+        ;Display bookprice
+        ;Price
+        ; Load the floating-point values into the FPU and multiply
+        MOV DI,20
+        FLD DWORD PTR [Price[DI]]  ; Load num1 into the FPU stack
+        FILD WORD PTR [factor] ; Load factor
+        FMUL                  ; Multiply result by factor to scale
+        FISTP result          ; Store integer part in result
+
+        CALL DISPF  ;below no need, do until here is cukup    
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_LQ
+        INT 21H
+
+        ;Display left quantity
+        MOV SI,10
+        MOV AH,0H
+        MOV AX,LeftQuantity[SI]
+        DIV HUNDRED
+        MOV BX,AX
+
+        MOV AH,02H
+        MOV DL,BL
+        ADD DL,30H
+        INT 21H
+        
+        MOV AH,0H
+        MOV AL,BH
+        DIV TEN 
+        MOV BX,AX
+
+        MOV AH,02H
+        MOV DL,BL
+        ADD DL,30H
+        INT 21H
+        
+        MOV DL,BH
+        ADD DL,30H
+        INT 21H
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_AUTHOR
+        INT 21H
+
+        ;Display book author
+        MOV SI,OFFSET AUTHOR
+        ADD SI,10
+        MOV AX,[SI]            
+        MOV DX,AX             
+        MOV AH,09H           
+        INT 21H 
+        JMP CONTINUE_9
+
+        ;Education
+        ED:
+        MOV AH,09H
+        LEA DX,LINE
+        INT 21H
+
+        LEA DX,NL
+        INT 21H
+
+        ;Display what genre now
+        LEA DX,HEARDER_E
+        INT 21H
+
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,LINE
+        INT 21H
+
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_TITLE
+        INT 21H
+
+        ;WILLOW
+        ;Display bookname
+        MOV SI,OFFSET BOOK
+        ADD SI,6
+        MOV AX,[SI]             ; Load the offset of the second book name into AX
+        MOV DX,AX               ; Move the offset into DX (required for INT 21H)
+        MOV AH,09H              ; DOS print string function
+        INT 21H      
+
+        LEA DX,NL
+        INT 21H 
+
+        LEA DX,D_PRICE
+        INT 21H  
+        
+        ;Display bookprice
+        ;Price
+        ; Load the floating-point values into the FPU and multiply
+        MOV DI,12
+        FLD DWORD PTR [Price[DI]]  ; Load num1 into the FPU stack
+        FILD WORD PTR [factor] ; Load factor
+        FMUL                  ; Multiply result by factor to scale
+        FISTP result          ; Store integer part in result
+
+        CALL DISPF  ;below no need, do until here is cukup     
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_LQ
+        INT 21H
+
+        ;Display left quantity
+        MOV SI,6
+        MOV AH,0H
+        MOV AX,LeftQuantity[SI]
+        DIV HUNDRED
+        MOV BX,AX
+
+        MOV AH,02H
+        MOV DL,BL
+        ADD DL,30H
+        INT 21H
+        
+        MOV AH,0H
+        MOV AL,BH
+        DIV TEN 
+        MOV BX,AX
+
+        MOV AH,02H
+        MOV DL,BL
+        ADD DL,30H
+        INT 21H
+        
+        MOV DL,BH
+        ADD DL,30H
+        INT 21H
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,D_AUTHOR
+        INT 21H
+
+        ;Display book author
+        MOV SI,OFFSET AUTHOR
+        ADD SI,6
+        MOV AX,[SI]            
+        MOV DX,AX             
+        MOV AH,09H           
+        INT 21H 
+        JMP CONTINUE_9
+
+        ERROR_G:
+                MOV AH,09H
+                LEA DX,ERROR_MESSAGE_ONE
+                INT 21H
+
+                LEA DX,NL
+                INT 21H
+                JMP GENRE_L
+
+        FIN_G:
+        MOV AX,4C00H
+        INT 21H
+    GENRE_F ENDP
+
+
+    MENU PROC
+        MOV AX,@DATA
+        MOV DS,AX
+
+        MOV AH,09H
+        LEA DX,LINE
+        INT 21H
+
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,HEARDER_SEARCH_MENU
+        INT 21H
+
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,LINE
+        INT 21H
+
+        LEA DX,NL
+        INT 21H
+
+        ;Display the menu
+        MOV AH,09H
+        LEA DX,SEARCH_MENU_1
+        INT 21H
+        
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,SEARCH_MENU_2
+        INT 21H
+
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,SEARCH_MENU_3
+        INT 21H
+
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,SEARCH_MENU_4
+        INT 21H
+
+        LEA DX,NL
+        INT 21H
+
+        ;ask user enter thier choose
+        MOV AH,09H
+        LEA DX,QUESTION_ONE
+        INT 21H
+
+        ;get input
+        MOV AH,01H
+        INT 21H
+        SUB AL,30H
+        MOV SEARCH_SELECTION_ONE,AL
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        CMP SEARCH_SELECTION_ONE, 1
+        JAE CONTINUE_1  ; Jump if SEARCH_SELECTION_ONE >= 1
+        JMP ERROR       ; If not, jump to ERROR
+
+        CONTINUE_1:
+        ; Validation if ans1 > 3
+        CMP SEARCH_SELECTION_ONE, 4
+        JBE CONTINUE_2  ; Jump if SEARCH_SELECTION_ONE <= 3
+        JMP ERROR      ; If not, jump to ERROR
+
+            
+        CONTINUE_2:
+        ;Display the selected option
+        MOV AH,09H
+        LEA DX,CONFIRM_SELECTION
+        INT 21H
+
+        MOV AH,02H
+        MOV DL,SEARCH_SELECTION_ONE
+        ADD DL,30H
+        INT 21H
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        OP1:
+        CMP SEARCH_SELECTION_ONE,1
+        JNE OP2
+
+        CALL TITLE_F
+
+        OP2:
+        CMP SEARCH_SELECTION_ONE,2
+        JNE OP3
+
+        CALL AUTHOR_F
+
+        OP3:
+        CMP SEARCH_SELECTION_ONE,3
+        JNE OP4
+
+        CALL GENRE_F
+
+        OP4:
+        CMP SEARCH_SELECTION_ONE,4
+        JNE ERROR
+
+        CALL D_ALL
+
+        ;Invalid input
+        ERROR:
+            MOV AH,09H
+            LEA DX,ERROR_MESSAGE_ONE
+            INT 21H
+
+            LEA DX,NL
+            INT 21H
+            JMP FIN
+
+
+        FIN:
+        MOV AX,4C00H
+        INT 21H
+
+    MENU ENDP
+
+
+    D_ALL PROC
+        MOV AX,@DATA
+        MOV DS,AX
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        LEA DX,HEARDER_SEARCH_ALL
+        INT 21H
+
+        MOV AH,09H
+        LEA DX,NL
+        INT 21H
+
+        CALL DISPLAY_DASH
+
+        MOV AH,09H
+        LEA DX,COLUMN_DIS_ALL_HEADERS
+        INT 21H
+
+        CALL DISPLAY_DASH
+
+        MOV CX,8
+        MOV SI,0
+        MOV DI,0
+        DISPLAY_SEARCH:    
+
+            ;Display bookname
+            MOV AX, [BOOK + SI]   ; Get the address of the book name
+            MOV DX, AX                ; Move the address to DX for printing
+            MOV AH, 09H               ; DOS function to print string
+            INT 21H  
+        
+            ;Price
+            ; Load the floating-point values into the FPU and multiply
+            FLD DWORD PTR [Price[DI]]  ; Load num1 into the FPU stack
+            FILD WORD PTR [factor] ; Load factor
+            FMUL                  ; Multiply result by factor to scale
+            FISTP result          ; Store integer part in result
+
+            CALL DISPF  ;below no need, do until here is cukup
+
+            MOV AH, 09H          ; print string
+            LEA DX, ALL_PRICE_COLUMN_SPACE
+            INT 21H
+
+            ;Display left quantity
+            CALL CALCULATION_QUANTITY
+
+            D_SECOND:
+
+            MOV AX, [GENRE + SI]   ; Get the address of the book name
+            MOV DX, AX                ; Move the address to DX for printing
+            MOV AH, 09H               ; DOS function to print string
+            INT 21H 
+
+            ;Display book author
+            MOV AX, [AUTHOR + SI]     ; Get the address of the author
+            MOV DX, AX
+            MOV AH, 09H
+            INT 21H
+
+            LEA DX,NL
+            INT 21H
+
+            ADD SI, 2
+            ADD DI,4
+        LOOP DISPLAY_SEARCH
+
+
+        JMP CONTINUE_9
+
+    D_ALL ENDP
+
+
+    CALCULATION_QUANTITY PROC
+        MOV AX,@DATA
+        MOV DS,AX
+
+        MOV AH,0H
+        MOV AX,LeftQuantity[SI]
+        DIV HUNDRED
+        MOV BX,AX
+
+        MOV AH,02H
+        MOV DL,BL
+        ADD DL,30H
+        INT 21H
+        
+        MOV AH,0H
+        MOV AL,BH
+        DIV TEN 
+        MOV BX,AX
+
+        MOV AH,02H
+        MOV DL,BL
+        ADD DL,30H
+        INT 21H
+        
+        MOV DL,BH
+        ADD DL,30H
+        INT 21H
+
+        MOV AH, 09H          ; print string
+        LEA DX, ALL_LQ_COLUMN_SPACE
+        INT 21H
+
+        JMP D_SECOND
+
+    CALCULATION_QUANTITY ENDP
 ;;;;;
 
 
@@ -847,7 +4064,6 @@ MAIN ENDP
 
 ;PAYMENT_FUNCTION
     PAYMENT_FUNCTION_MAIN PROC
-        ; Preserve registers
         PUSH AX
         PUSH BX
         PUSH CX
@@ -855,199 +4071,191 @@ MAIN ENDP
         PUSH DI
         PUSH SI
 
-            FINIT
+
+            FINIT                         ;Initialize the FPU Stack
             FLDZ                          ; Load 0.0 into FPU stack
             FSTP DWORD PTR [TOTALAMOUNT]  ; Store 0.0 in TOTALAMOUNT
 
             MOV AH,09H	
-            LEA DX,NL
+            LEA DX,NL                     ;Display New Line
             INT 21H	
-            LEA DX,PAYMENT_MAIN_HEADER
+            LEA DX,PAYMENT_MAIN_HEADER    ;Print the Payment Main Header
             INT 21H
             LEA DX,NL
             INT 21H
 
-            CALL DISPLAY_DASH
+            CALL DISPLAY_DASH             ;Call the Display Dash method to print a line
 
             ;display the header here			
-            LEA DX,PAYMENT_HEADER
+            LEA DX,PAYMENT_HEADER         ;Print the Payment Header
             INT 21H
 
 
-    ;TO CALCULATE TOTAL AND DISPLAY EACH AMOUNT
-    MOV ADDRESS_PRICE,0
-    MOV ADDRESS_EACH_AMOUNT,0
+    ;To Calculate Total and Display Total Amount
+    MOV ADDRESS_PRICE,0             ;Initialize the Price Adress
+    MOV ADDRESS_EACH_AMOUNT,0       ;Initialize the Each Amount Adress
     MOV SI,0
-    MOV PAYMENT_LOOP_COUNT,8
+    MOV PAYMENT_LOOP_COUNT,8        ;Loop 8 Times, because got 8 books in the system
     MOV DI,0
-    MOV BOOK_NO,1
+    MOV BOOK_NO,1                   ;Book_No set to 1 to display the No. before each book name
     L1:
 
-        CMP BOOK_ORDER_QUANTITY[DI],0 				;COMPARE IF BOOK QUANTITY WANT TO BUY IF 0, THEN SKIP IT
-        JNE BOOK_QUANTITY_NOT_EQUAL_ZERO
+        CMP BOOK_ORDER_QUANTITY[DI],0 			;Compare the Buy Quantity of each book, if equal 0, then skip
+        JNE BOOK_QUANTITY_NOT_EQUAL_ZERO        ;that particular one book and proceed to next book
 
-        JMP AGAIN
+        JMP AGAIN                               ;If book quantity = 0, Jump to Again
 
         BOOK_QUANTITY_NOT_EQUAL_ZERO:
-        ;INC BOOKC   				  ;MIGHT BE REDUNDANT DATA
         MOV AX,0H
+        XOR CX,CX                               ;Initialize CX to 0
+        MOV CL,BOOK_ORDER_QUANTITY[DI]          ;Mov order quantity (8-bit) into CL(8-bit)
+        MOV TEMP_BOOK_QUANTITY,CX               ;Mov CX(16-bit) into temporary book quantity
 
-        XOR CX,CX
-        MOV CL,BOOK_ORDER_QUANTITY[DI]
-        MOV TEMP_BOOK_QUANTITY,CX
-        FILD WORD PTR [TEMP_BOOK_QUANTITY] ;LOAD QUANTITY
+        FILD WORD PTR [TEMP_BOOK_QUANTITY]      ;Load quantity from temporary book quantity into the
+                                                ;FPU stack, because can't move (8-bit) data into the 
+                                                ;FPU stack
 
-            MOV TDI,DI				;USING DIFFERENT ADDRESS_PRICE FOR FLOATING POINT AND GENERAL DATA
-            MOV DI,ADDRESS_PRICE
+            MOV TDI,DI				;Mov the current DI into TDI(temporary DI)
+            MOV DI,ADDRESS_PRICE    ;Mov the price address into DI, because book quantity(DB) use up to 1-bit
+                                    ;per data, but for price(DD) use up to 4-bit per data
 
-        FLD DWORD PTR [PRICE[DI]]  ;LOAD PRICE INTO FPU STACK
-        FMUL						;MULTIPLE THE PRICE AND THE QUANTITY BUY
 
-            MOV DI,ADDRESS_EACH_AMOUNT		;THE COUNT FOR FLOATING POINT VARIABLE PRICE AND EACHAMOUNT MAY BE DIFFRENT
-                                    ;REGARD WHETHER THE BUY QUANTITY IS ZERO OR NOT
+        FLD DWORD PTR [PRICE[DI]]  ;Load price into FPU stack
+        FMUL						;Multiple the price and the buy quantity to get thee total for a particular book
 
-        FSTP DWORD PTR [EACHAMOUNT[DI]]		;STORE THE RESULT INTO EACHAMOUNT
+            MOV DI,ADDRESS_EACH_AMOUNT		;Mov the each amount address into the DI, this step is neccessary
+                                            ;although both price and each amount is DD data, and use up to 
+                                            ;4-bit per data, but the count of the DI will be differ because 
+                                            ;some book's buy quantity might be 0
 
-            MOV DI,TDI				;RESET THE ADDRESS_PRICE BACK TO NORMAL
+        FSTP DWORD PTR [EACHAMOUNT[DI]]		;Store the result of (price * buy quantity) into each amount for each book
 
-        CALL DISPLAY_DASH			;LOOP TO PRINT THE LINE IN THE TABLE
+            MOV DI,TDI				;Restore the DI
 
-    ;display the quantity, name, and total here
+        CALL DISPLAY_DASH			;Call the display dash function to display a line
 
-        ;MOV AH,09H		;display the new line
-        ;LEA DX,NL
-        ;INT 21H
-
-        ; Load the pointer to the book name from the BOOK array
-
-        MOV AH, 02H          ; DOS interrupt to print character
-        MOV DL, BOOK_NO           ; Load the book number into DL
-        ADD DL, 30H          ; Convert number to ASCII (1 - 8)
+        MOV AH,02H   
+        MOV DL,BOOK_NO      ;Display Book No. to enchance the ease of visibility and tidy of the table
+        ADD DL,30H
         INT 21H
 
-        INC BOOK_NO
-        ; Print a period and space after the number
+        INC BOOK_NO         ;Increase the Book No. for the next loop
         MOV AH,09H
-        LEA DX,DOT
+        LEA DX,DOT          ;Display a dot(.) after the Book No
         INT 21H
 
         MOV AH,09H 
-        MOV DX,BOOK[SI] 	;display the book name of customer buying
+        MOV DX,BOOK[SI] 	;Display the book name of customer buying
         INT 21H  		
 
-            MOV TDI,DI			;store the original address into temporary register first
-            MOV DI,ADDRESS_PRICE		;load the floating point number into DI
+            MOV TDI,DI			        ;Mov the original address into temporary DI
+            MOV DI,ADDRESS_PRICE		;Mov the price adress into DI
 
         FLD DWORD PTR [PRICE[DI]]  ;Load price into the FPU stack
 
-            MOV DI,TDI			;restore the original address
+            MOV DI,TDI			;Restore the DI
 
-        FILD WORD PTR [factor] ;Load factor(10)
-        FMUL                  ;Multiply price by factor to scale so can pass into function for display
-        FISTP result          ; Store integer part in result
+        FILD WORD PTR [factor] ;Load factor(10) in the FPU stack
+        FMUL                    ;Multiply price by factor to scale so can pass into function for display
+                                ;For example (price = 10.9) * (factor = 10) = 109
+
+        FISTP result          ;Store the answer in result
         
-        CALL DISPF			;call the display floating point function
-
+        CALL DISPF			;Call the display floating point function
         ;;;;;;;
 
         MOV AH,09H 
-        LEA DX,TAB	
+        LEA DX,TAB	        ;Display a Tab after display the Price
         INT 21H
 
         MOV AX,0H
-        MOV AL,BOOK_ORDER_QUANTITY[DI]		;to display the number of book quantity in order
-        DIV TEN				
-        MOV BX,AX
+        MOV AL,BOOK_ORDER_QUANTITY[DI]		;To display the number of book order quantity
+        DIV TEN				                ;Divide Ten(10) to break the number down
+        MOV BX,AX                           ;Mov the answer in AX into BX
 
         MOV AH,02H
-        MOV DL,BL
+        MOV DL,BL                           ;Display the BL first
         ADD DL,30H
         INT 21H
 
         MOV AH,02H
-        MOV DL,BH
+        MOV DL,BH                           ;Display the BH(remainder) after
         ADD DL,30H
         INT 21H
-
         ;;;;;
 
         MOV AH,09H 
-        LEA DX,TAB	
+        LEA DX,TAB	                        ;Display a Tab after the quantity order
         INT 21H
 
-            MOV TDI,DI
-            MOV DI,ADDRESS_EACH_AMOUNT
+            MOV TDI,DI                      ;Mov the DI into temporary DI
+            MOV DI,ADDRESS_EACH_AMOUNT      ;Mov the each amount address into DI
 
-        FLD DWORD PTR [EACHAMOUNT[DI]]  ; Load each amount into the FPU stack
+        FLD DWORD PTR [EACHAMOUNT[DI]]  ;Load each amount into the FPU stack
 
-        FLD DWORD PTR [TOTALAMOUNT]		;load total amount into FPU stack
+        FLD DWORD PTR [TOTALAMOUNT]		;Load total amount into FPU stack
 
         FADD							;add each amount and total amount together, to calculate the total amount
-                                        ;of that order
-        FSTP DWORD PTR [TOTALAMOUNT]    ;and store the result back into TOTALAMOUNT
+                                        ;of the order
 
-        FINIT						;initialize the FPU stack, to avoid bugs
+        FSTP DWORD PTR [TOTALAMOUNT]    ;store the result back into TOTALAMOUNT
+
+        FINIT						;Initialize the FPU stack, because it keeps bugging here
 
         FLD DWORD PTR [EACHAMOUNT[DI]]  ;Load each amount into the FPU stack again
-        FILD WORD PTR [factor] 			;Load factor
-        FMUL							;multiply to scale the each amount
+        FILD WORD PTR [factor] 			;Load factor(10)
+        FMUL							;Multiply to scale the each amount
         FISTP result         			;Store integer part in result
 
-        CALL DISPF						;call the display floating point number function
+        CALL DISPF						;Call the display floating point number function
 
-        MOV DI,TDI
+        MOV DI,TDI                      ;Restore the DI
 
-        MOV BX,4						;each floating point takes up to 4 bytes
-        ADD ADDRESS_EACH_AMOUNT,BX				;update the each amount address by add 4
-        
+        ADD ADDRESS_EACH_AMOUNT,4		;Update the each amount address by add 4, because each DD variable
+                                        ;takes up to 4-bytes
         ;;;;
 
         MOV AH,09H			
-        LEA DX,NL						;display newline after each book done
+        LEA DX,NL						;Display newline after each book done
         INT 21H
 
         AGAIN:
 
-            ADD SI,2					;update SI, each data takes up to 2 bytes in DW
-            INC DI						;update DI, simple add 1
-            MOV BX,4					;each floating point takes up to 4 bytes
-            ADD ADDRESS_PRICE,BX				;update the price address by add 4
+            ADD SI,2					;Update SI, each DW data takes up to 2-bytes
+            INC DI						;Update DI, simple add 1
+            ADD ADDRESS_PRICE,4			;Update the price address by add 4, each DD data takes up to 4-bytes
         
-            DEC PAYMENT_LOOP_COUNT						;use PAYMENT_LOOP_COUNT to count 10 books for a loop
-            CMP PAYMENT_LOOP_COUNT,0					;check if 10 books loop already done or not?
-            JE FINISH_DISPLAY_PAYMENT					;if yes, jump to finish
+            DEC PAYMENT_LOOP_COUNT					;Use PAYMENT_LOOP_COUNT to count 8 books for a loop
+            CMP PAYMENT_LOOP_COUNT,0				;Check if 8 books loop already done or not?
+            JE FINISH_DISPLAY_PAYMENT				;If yes, jump to finish
         
         JMP L1
 
         FINISH_DISPLAY_PAYMENT:
 
 
-        CALL DISPLAY_DASH
-
-
-        FINIT
+        CALL DISPLAY_DASH                       ;Call the display dash function to print a line                                 
 
         MOV AH,09H 
-        LEA DX,GRAND_TOTAL_AMOUNT_PREFIX
+        LEA DX,GRAND_TOTAL_AMOUNT_PREFIX        ;Print the prefix of the message to place the message in the middle
         INT 21H
-        LEA DX,TOTAL_AMOUNT_MESSAGE
+        LEA DX,TOTAL_AMOUNT_MESSAGE             ;Print the total amount message
         INT 21H
         
-        FINIT
+        FINIT                                   ;Initialize the FPU stack again after the loop
         ; Display the total amount
-        FLD DWORD PTR [TOTALAMOUNT]
-        FILD WORD PTR [FACTOR] ; Load factor
-        FMUL
-        FISTP result          ; Store integer part in result
-        CALL DISPF
+        FLD DWORD PTR [TOTALAMOUNT]             ;Load the total amount into the FPU stack
+        FILD WORD PTR [FACTOR]                  ;Load factor(10)
+        FMUL                                    ;Multiply to scale the data
+        FISTP result                            ;Store the answer in result
+        CALL DISPF                              ;Call the display floating point function
 
         MOV AH,09H
         LEA DX,NL
         INT 21H
 
-        CALL CHOOSEPAY   ;prompt user to choose payment method
+        CALL CHOOSEPAY                          ;Prompt user to choose payment method
 
-        ; Restore registers
         POP SI
         POP DI
         POP DX
@@ -1059,7 +4267,7 @@ MAIN ENDP
 
 
     DISPF PROC
-        ; Preserve registers
+        ; Preserve registers, to avoid interruption of loop in the calling function
         PUSH AX
         PUSH BX
         PUSH CX
@@ -1067,105 +4275,110 @@ MAIN ENDP
         PUSH DI
         PUSH SI
 
-        MOV fraction_count,0
+        MOV fraction_count,0        ;initialize the count, to avoid unwanted truncate of 0
 
-        ; Load the value of 'result' into AX (assuming result is 16-bit)
-        MOV AX, result       ; AX now holds the value, e.g., 15000
+        MOV AX, result              ;Load the value of 'result' into AX 
 
-        ; Division by 10000 to extract the ten-thousands place
-        MOV CX, TEN_THOUSAND         ; Divisor for ten-thousands
-        XOR DX, DX            ; Clear DX to avoid overflow
-        DIV CX                ; AX = AX / 10000, DX = remainder
-        MOV TAL, AL         ; Store the ten-thousands digit in TAL
-        MOV AX, DX            ; AX now holds the remainder
+        ;Division by 10000 to extract the ten-thousands place
+        MOV CX, TEN_THOUSAND         ;Mov ten thousand(10000) into CX 
+        XOR DX, DX                   ;Clear DX to avoid overflow
+        DIV CX                       ;AX = AX / 10000, DX = remainder
+        MOV TAL, AL                  ;Store the ten-thousands digit in TAL(temporary AL)
+        MOV AX, DX                   ;AX now holds the remainder
 
-        ; Division by 1000 to extract the thousands place
-        MOV CX, THOUSAND          ; Divisor for thousands
-        XOR DX, DX            ; Clear DX
-        DIV CX                ; AX = AX / 1000, DX = remainder
-        MOV TBL, AL         ; Store the thousands digit in TBL
-        MOV AX, DX            ; AX now holds the remainder
+        ;Division by 1000 to extract the thousands place
+        MOV CX, THOUSAND             ;Mov thousand(1000) into CX
+        XOR DX, DX                   ;Clear DX to avoid overflow
+        DIV CX                       ;AX = AX / 1000, DX = remainder
+        MOV TBL, AL                  ;Store the thousands digit in TBL(temporary BL)
+        MOV AX, DX                   ;AX now holds the remainder
 
-        ; Division by 100 to extract the hundreds place
-        XOR CX,CX
-        MOV CL, HUNDRED           ; Divisor for hundreds
-        XOR DX, DX            ; Clear DX
-        DIV CX                ; AX = AX / 100, DX = remainder
-        MOV TCL, AL         ; Store the hundreds digit in TCL
-        MOV AX, DX            ; AX now holds the remainder
+        ;Division by 100 to extract the hundreds place
+        XOR CX,CX                    ;Clear CX
+        MOV CL, HUNDRED              ;Mov hundred(100) into CL
+        XOR DX, DX                   ;Clear DX to avoid overflow
+        DIV CX                       ;AX = AX / 100, DX = remainder
+        MOV TCL, AL                  ;Store the hundreds digit in TCL(temporary CL)
+        MOV AX, DX                   ;AX now holds the remainder
 
-        ; Division by 10 to extract the tens place
-        XOR CX,CX
-        MOV CL, TEN            ; Divisor for tens
-        XOR DX, DX            ; Clear DX
-        DIV CX                ; AX = AX / 10, DX = remainder
-        MOV TDL, AL         ; Store the tens digit in TDL
-        MOV TAA, DL         ; Store the remainder (units place) in TSI
+        ;Division by 10 to extract the tens place
+        XOR CX,CX                    ;Clear CX
+        MOV CL, TEN                  ;Mov ten(10) into CL
+        XOR DX, DX                   ;Clear DX to avoid overflow
+        DIV CX                       ;AX = AX / 10, DX = remainder
+        MOV TDL, AL                  ;Store the tens digit in TDL
+        MOV TAA, DL                  ;Store the remainder in TAA
 
-        ; Print the ten-thousands digit (if it's not zero)
-        CMP TAL, 0
-        JZ SkipTenThousands   ; If the ten-thousands digit is 0, skip it
-        INC fraction_count
-        MOV AL, TAL         ; Load the ten-thousands digit
-        ADD AL, '0'           ; Convert to ASCII
+        ;Print the ten-thousands digit
+        CMP TAL, 0                  ;Compare if the TAL is Zero or not, if yes, skip the print
+        JZ SkipTenThousands         ;If the ten-thousands digit is 0, skip it
+        INC fraction_count          ;Increase the fraction count if it didn't skip, so it won't 
+                                    ;skip or truncate zero in the middle of the whole digit
+
+        MOV AL, TAL                 ;Load the ten-thousands digit
+        ADD AL, '0'                 ;Convert to ASCII
         MOV AH, 02H
         MOV DL, AL
-        INT 21H               ; Print the character
+        INT 21H
 
     SkipTenThousands:
 
-        ; Print the thousands digit
-        CMP fraction_count,1
-        JGE NO_NEED_SKIP_TEN_THOUSANDS
-        CMP TBL, 0
-        JZ SkipThousands      ; If the thousands digit is 0, skip it (after 10000 case)
+        ;Print the thousands digit
+        CMP fraction_count,1            ;If the fraction count is 1, means there's number(not zero) before this
+                                        ;number, so don't need to skip this even it's zero
+
+        JGE NO_NEED_SKIP_TEN_THOUSANDS  ;If >= 1, then no need to skip to print this digit
+        CMP TBL, 0                      ;Compare if the digit is zero
+        JZ SkipThousands                ;If the thousands digit is 0, skip it
         NO_NEED_SKIP_TEN_THOUSANDS:
-        INC fraction_count
-        MOV AL, TBL         ; Load the thousands digit
-        ADD AL, '0'           ; Convert to ASCII
+        INC fraction_count              ;If it's not zero, increase the fraction count
+        MOV AL, TBL                     ;Load the thousands digit
+        ADD AL, '0'                     ;Convert to ASCII
         MOV AH, 02H
         MOV DL, AL
-        INT 21H               ; Print the character
+        INT 21H
 
     SkipThousands:
 
-        ; Print the hundreds digit
-        CMP fraction_count,1
-        JGE NO_NEED_SKIP_THOUSANDS
-        CMP TCL, 0
-        JZ SkipHundreds       ; If the hundreds digit is 0, skip it (after 1000 case)
+        ;Print the hundreds digit
+        CMP fraction_count,1            ;If the fraction count is 1, means there's number(not zero) before this
+                                        ;number, so don't need to skip this even it's zero
+        
+        JGE NO_NEED_SKIP_THOUSANDS      ;If >= 1, then no need to skip to print this digit
+        CMP TCL, 0                      ;Compare if the digit is zero
+        JZ SkipHundreds                 ;If the hundreds digit is 0, skip it
         NO_NEED_SKIP_THOUSANDS:
-        INC fraction_count
-        MOV AL, TBL         ; Load the thousands digit
-        MOV AL, TCL         ; Load the hundreds digit
-        ADD AL, '0'           ; Convert to ASCII
+        INC fraction_count              ;If it's not zero, increase the fraction count
+        MOV AL, TBL                     ;Load the thousands digit
+        MOV AL, TCL                     ;Load the hundreds digit
+        ADD AL, '0'                     ;Convert to ASCII
         MOV AH, 02H
         MOV DL, AL
-        INT 21H               ; Print the character
+        INT 21H      
 
     SkipHundreds:
 
-        ; Print the tens digit
-        MOV AL, TDL         ; Load the tens digit
-        ADD AL, '0'           ; Convert to ASCII
+        ;Print the tens digit
+        MOV AL, TDL                     ;Load the tens digit
+        ADD AL, '0'                     ;Convert to ASCII
         MOV AH, 02H
         MOV DL, AL
-        INT 21H               ; Print the character
+        INT 21H      
 
-        ;Print the decimal point (for floating-point representation, if needed)
+        ;Print the decimal point
         MOV AH, 02H
         MOV DL, '.'
         INT 21H
 
-        ; Print the units digit
-        MOV AL, TAA         ; Load the units digit
-        ADD AL, '0'           ; Convert to ASCII
+        ;Print the units digit
+        MOV AL, TAA                     ;Load the units digit
+        ADD AL, '0'                     ;Convert to ASCII
         MOV AH, 02H
         MOV DL, AL
-        INT 21H               ; Print the character
+        INT 21H     
 
         MOV AH,02H
-        MOV DL,'0'
+        MOV DL,'0'                      ;Manually print out the last '0'
         INT 21H
 
         ; Restore registers
@@ -1194,7 +4407,7 @@ MAIN ENDP
         LEA DX,NL
         INT 21H
 
-        LEA DX,PAYMENT_METHOD_MESSAGE
+        LEA DX,PAYMENT_METHOD_MESSAGE       ;Print the payment method header
         INT 21H
         
         LEA DX,NL
@@ -1202,15 +4415,15 @@ MAIN ENDP
         
         ;Option TNG
         MOV AH,02H
-        MOV DL,1
+        MOV DL,1                            ;Print the No. of the option
         ADD DL,30H
         INT 21H
         
         MOV AH,09H
-        LEA DX,DOT
+        LEA DX,DOT                          ;Print a dot(.) after the No.
         INT 21H
         
-        LEA DX,TNG
+        LEA DX,TNG                          ;Print the option(Touch n Go)
         INT 21H
         
         LEA DX,NL
@@ -1218,15 +4431,15 @@ MAIN ENDP
         
         ;Option CARD
         MOV AH,02H
-        MOV DL,2
+        MOV DL,2                            ;Print the No. of the option
         ADD DL,30H
         INT 21H
         
         MOV AH,09H
-        LEA DX,DOT
+        LEA DX,DOT                          ;Print a dot(.) after the No.
         INT 21H
         
-        LEA DX,CARD
+        LEA DX,CARD                          ;Print the option(Card)
         INT 21H
         
         LEA DX,NL
@@ -1234,38 +4447,37 @@ MAIN ENDP
         
         ;Option CASH
         MOV AH,02H
-        MOV DL,3
+        MOV DL,3                            ;Print the No. of the option
         ADD DL,30H
         INT 21H
         
         MOV AH,09H
-        LEA DX,DOT
+        LEA DX,DOT                          ;Print a dot(.) after the No.
         INT 21H
         
-        LEA DX,CASH
+        LEA DX,CASH                          ;Print the option(Cash)
         INT 21H
         
         LEA DX,NL
         INT 21H
         
         ;Prompt User Input
-        LEA DX,PROMPOPT
+        LEA DX,PROMPOPT                     ;Print the message to prompt user input
         INT 21H
         
-        MOV AH,01H
+        MOV AH,01H                          ;Read user input
         INT 21H
-        MOV PAYMENT_SELECTION_ONE,AL
+        MOV PAYMENT_SELECTION_ONE,AL        ;Mov user input into payment selection
         
         ;Compare User Input
-        ;Check Valid
-        CMP PAYMENT_SELECTION_ONE,'1'
+        CMP PAYMENT_SELECTION_ONE,'1'       ;If choose 1, then jump to Touch n Go part
         JE TGO
-        CMP PAYMENT_SELECTION_ONE,'2'
-        JE CAD_INTERCHANGE
-        CMP PAYMENT_SELECTION_ONE,'3'
-        JE CAH_INTERCHANGE
+        CMP PAYMENT_SELECTION_ONE,'2'       ;If choose 2, then jump to Card part
+        JE CAD
+        CMP PAYMENT_SELECTION_ONE,'3'       ;If choose 3, then jump to Cash part
+        JE CAH
         
-        INVALID_PAYMENT_METHOD_INPUT:
+        INVALID_PAYMENT_METHOD_INPUT:       ;If the input didn't meet any of the above selection, it's invalid
         ;IF INVALID,PROMPT CONTINUE?
             MOV AH,09H
             LEA DX,NL
@@ -1273,13 +4485,13 @@ MAIN ENDP
             LEA DX,NL
             INT 21H
 
-            CALL DISPLAY_DASH
+            CALL DISPLAY_DASH               ;To print a line
             
             LEA DX,NL
             INT 21H
             LEA DX,NL
             INT 21H
-            LEA DX,PINVALID
+            LEA DX,PINVALID                 ;Prompt user the invalid message
             INT 21H
             
             LEA DX,NL
@@ -1287,7 +4499,7 @@ MAIN ENDP
             
             ;Enter Again?
             MOV AH,09H
-            LEA DX,ENTAGN
+            LEA DX,ENTAGN                   ;Print the message (Enter again?)
             INT 21H
             
             LEA DX,NL
@@ -1295,85 +4507,44 @@ MAIN ENDP
             
             ;Quit?
             MOV AH,09H
-            LEA DX,CANCEL_PAYMENT_MESSAGE
+            LEA DX,CANCEL_PAYMENT_MESSAGE       ;Print the message (Cancel Payment?)
             INT 21H
             
             LEA DX,NL
             INT 21H
             
             ;PROMT USER INPUT 
-            LEA DX,PROMPOPT
+            LEA DX,PROMPOPT                     ;Print the prompt message
             INT 21H
             
-            MOV AH,01H
+            MOV AH,01H                          ;Read user input
             INT 21H	
-            MOV PAYMENT_SELECTION_TWO,AL
+            MOV PAYMENT_SELECTION_TWO,AL        ;Store user input into payment selection two
 
             MOV AH,09H
             LEA DX,NL
             INT 21H
             
-            CMP PAYMENT_SELECTION_TWO,'2'
+            CMP PAYMENT_SELECTION_TWO,'2'       ;If user input 2, go to finish payment(quit)
             JE FINISHPM ;QUIT
-            CMP PAYMENT_SELECTION_TWO,'1'
-            JNE INVALID_PAYMENT_METHOD_INPUT
-            JMP CHOOSE_PAYMENT_METHOD
-            CAD_INTERCHANGE:
-                JMP CAD
-            CAH_INTERCHANGE:
-                JMP CAH
+            CMP PAYMENT_SELECTION_TWO,'1'      
+            JNE INVALID_PAYMENT_METHOD_INPUT    ;If user's not input 1, go to invalid again
+            JMP CHOOSE_PAYMENT_METHOD           ;If user input 1, go to choose payment method again
         
         TGO:
-            MOV AH,09H
-            LEA DX,NL
-            INT 21H
-            LEA DX,NL
-            INT 21H
-            CALL DISPLAY_DASH
-            LEA DX,PRINT_MIDDLE
-            INT 21H
-            
-            LEA DX,TNG
-            INT 21H
-
-            CALL ORDER_CONFIRMATION
+            CALL TouchNGoPayment
             JMP FINISHPM
         
         CAD:
-            MOV AH,09H
-            LEA DX,NL
-            INT 21H
-            LEA DX,NL
-            INT 21H
-            CALL DISPLAY_DASH
-            LEA DX,PRINT_MIDDLE
-            INT 21H
-            
-            LEA DX,CARD
-            INT 21H
-            CALL ORDER_CONFIRMATION
+            CALL CardPayment
             JMP FINISHPM
         
         CAH:
-            MOV AH,09H
-            LEA DX,NL
-            INT 21H
-            LEA DX,NL
-            INT 21H
-            CALL DISPLAY_DASH
-            LEA DX,PRINT_MIDDLE
-            INT 21H
-            
-            LEA DX,CASH
-            INT 21H
-            CALL CASHCHANGE
-            CALL ORDER_CONFIRMATION
+            CALL CashPayment
             JMP FINISHPM
-            
-            ;CHOOSE_PAYMENT_METHOD_INTERCHANGE:
-                ;JMP CHOOSE_PAYMENT_METHOD
 
         FINISHPM:
+
         ; Restore registers
         POP SI
         POP DI
@@ -1383,6 +4554,116 @@ MAIN ENDP
         POP AX
         RET
     CHOOSEPAY ENDP
+
+
+    TouchNGoPayment PROC
+        ; Preserve registers
+        PUSH AX
+        PUSH BX
+        PUSH CX
+        PUSH DX
+        PUSH DI
+        PUSH SI
+
+            MOV AH,09H
+            LEA DX,NL
+            INT 21H
+            LEA DX,NL
+            INT 21H
+            CALL DISPLAY_DASH               ;Display a line on the screen
+            LEA DX,PRINT_MIDDLE             ;To print the header on the middle
+            INT 21H
+            MOV AH,09H
+            LEA DX,TNG                      ;Print the header Touch N Go
+            INT 21H
+
+            CALL ORDER_CONFIRMATION         ;Ask if user the payment is make or not
+
+        RET
+
+        ; Restore registers
+        POP SI
+        POP DI
+        POP DX
+        POP CX
+        POP BX
+        POP AX
+        RET
+    TouchNGoPayment ENDP
+
+
+    CardPayment PROC
+        ; Preserve registers
+        PUSH AX
+        PUSH BX
+        PUSH CX
+        PUSH DX
+        PUSH DI
+        PUSH SI
+
+            MOV AH,09H
+            LEA DX,NL
+            INT 21H
+            LEA DX,NL
+            INT 21H
+            CALL DISPLAY_DASH               ;Display a line on the screen
+            LEA DX,PRINT_MIDDLE             ;To print the header on the middle
+            INT 21H
+            MOV AH,09H
+            LEA DX,CARD                     ;Print the header Card
+            INT 21H
+
+            CALL ORDER_CONFIRMATION         ;Ask if user the payment is make or not
+
+        RET
+
+        ; Restore registers
+        POP SI
+        POP DI
+        POP DX
+        POP CX
+        POP BX
+        POP AX
+        RET
+    CardPayment ENDP
+
+
+    CashPayment PROC
+        ; Preserve registers
+        PUSH AX
+        PUSH BX
+        PUSH CX
+        PUSH DX
+        PUSH DI
+        PUSH SI
+
+            MOV AH,09H
+            LEA DX,NL
+            INT 21H
+            LEA DX,NL
+            INT 21H
+            CALL DISPLAY_DASH               ;Display a line on the screen
+            LEA DX,PRINT_MIDDLE             ;To print the header on the middle
+            INT 21H
+            MOV AH,09H
+            LEA DX,CASH                     ;Print the header Cash
+            INT 21H
+
+            CALL CASHCHANGE                 ;To calculate the change if customer use cash to make payment
+
+            CALL ORDER_CONFIRMATION         ;Ask if user the payment is make or not
+
+        RET
+
+        ; Restore registers
+        POP SI
+        POP DI
+        POP DX
+        POP CX
+        POP BX
+        POP AX
+        RET
+    CashPayment ENDP
 
 
     CASHCHANGE PROC
@@ -1395,69 +4676,71 @@ MAIN ENDP
         PUSH SI
 
         INPUT_CASH_AGAIN:
-        FINIT
-        FLDZ
+        FINIT                   ;Initialize the FPU stack
+        FLDZ                    ;Set the FPU stack to 0.0
         ; Prompt the user to input the payment amount
         MOV AH, 09H
         LEA DX,NL
         INT 21H
         LEA DX,NL
         INT 21H
-        LEA DX, PROMPTPAY
+        LEA DX, PROMPTPAY       ;Prompt the user to enter the amount of Money received
         INT 21H
 
         ; Initialize registers and variables
-        XOR AX, AX              ; Clear AX (this will hold the final value)
-        XOR BX, BX              ; Clear BX
-        XOR CX, CX              ; Clear CX
-        MOV PAIDAMOUNT_INT, AX     ; Ensure PAIDAMOUNT_INT starts at 0
-        MOV SI, 0               ; SI will be used as an index for input buffer
-        MOV TDI,0 		;USE TO TRACK IF GOT DECIMAL POINT OR NOT
+        XOR AX, AX                  ;Clear AX
+        XOR BX, BX                  ;Clear BX
+        XOR CX, CX                  ;Clear CX
+        MOV PAIDAMOUNT_INT, AX      ;To ensure PAIDAMOUNT_INT starts at 0
+        MOV SI, 0                   ;SI will be used as an index for input buffer
+        MOV TDI,0 		            ;Use to track if the decimal(.) is entered or not
 
-        ; Loop to input and convert each digit
+        ;Loop to input and convert each digit
     LOOP_INPUT_CASH:
-        MOV AH, 01H             ; Read user input (one character at a time)
+        MOV AH, 01H             ;Read user input, one character at a time
         INT 21H
 
-        CMP AL,'.'
-        JNE CONTINUE_WITHOUT_DECIMAL
+        CMP AL,'.'                          ;Check everytime did the user entered the decimal point(.)
+        JNE CONTINUE_WITHOUT_DECIMAL     
 
-            INC TDI
-            MOV AX,TDI
+            INC TDI                         ;If entered decimal point(.), increase the count
+            MOV AX,TDI                      ;Mov the TDI(decimal count) into AX to do the compare
             CMP AX,1
-            JG INVALID_CASH_INPUT
-            JMP LOOP_INPUT_CASH
+            JG INVALID_CASH_INPUT           ;If the TDI is greater than 1, means the decimal point is
+                                            ;entered more than once, means that it's not a valid value anymore
 
-        CONTINUE_WITHOUT_DECIMAL:
+            JMP LOOP_INPUT_CASH             ;Automatically back onto the start of the input loop(from the above)
 
-        CMP AL, 0DH             ; Check if Enter is pressed (0Dh in ASCII)
-        JE END_OF_CASH_INPUT_INTERCHANGE
+        CONTINUE_WITHOUT_DECIMAL:           ;If no decimal point input so far
 
-        SUB AL, 30H             ; Convert ASCII to a number (0-9)
+        CMP AL, 0DH                         ;Check if Enter is pressed (0Dh in ASCII)
+        JE END_OF_CASH_INPUT_INTERCHANGE    ;If enter is pressed, then end the input loop
+
+        SUB AL, 30H                         ;Convert user input into a number
         CMP AL, 0
-        JL INVALID_CASH_INPUT    ; If invalid, exit
-        CMP AL, 9
+        JL INVALID_CASH_INPUT               ;If invalid(less than 0, or greater than 9), jump to
+        CMP AL, 9                           ;handle invalid part
         JG INVALID_CASH_INPUT
 
-        MOV TAL, AL             ; Store the current digit in TAL
+        MOV TAL, AL                         ;Store the current digit in TAL
 
-        ; Multiply the current result by 10 using PAIDAMOUNT_INT
-        MOV AX, PAIDAMOUNT_INT     ; Load the current result
-        MOV CX, 10              ; Multiply by 10
-        MUL CX                  ; AX = AX * 10
-        MOV PAIDAMOUNT_INT, AX     ; Store back the result in PAIDAMOUNT_INT
+        ;Multiply the current result by 10 using PAIDAMOUNT_INT
+        MOV AX, PAIDAMOUNT_INT              ;Mov the current result into AX
+        MOV CX, 10                          ;Multiply by 10
+        MUL CX                              ;AX = AX * 10
+        MOV PAIDAMOUNT_INT, AX              ;Store back the result in PAIDAMOUNT_INT
 
-        ; Add the new digit to the result using TAL
-        XOR AX,AX
-        MOV AL,TAL
-        ADD PAIDAMOUNT_INT,AX    ; Add the digit to the final result
+        ;Add the new digit to the result using TAL
+        XOR AX,AX                           ;Clear the AX
+        MOV AL,TAL                          ;Mov the TAL into AL
+        ADD PAIDAMOUNT_INT,AX               ;Add the digit to the final result
 
-        INC SI                  ; Move to the next character
-        CMP SI, 10              ; Limit input to 10 characters
-        JGE END_OF_CASH_INPUT_INTERCHANGE
+        INC SI                              ;Move to the next character
+        CMP SI, 10                          ;Limit input to 10 characters
+        JGE END_OF_CASH_INPUT_INTERCHANGE   ;If already entered 10 characters, end the loop
 
-        CMP TDI, 1              ; Limit input to 10 characters
-        JE END_OF_CASH_INPUT_INTERCHANGE
+        CMP TDI, 1                          ;Limit input to 10 characters
+        JE END_OF_CASH_INPUT_INTERCHANGE    ;User only can input one more digit after they input a decimal point(.)
 
         JMP LOOP_INPUT_CASH
 
@@ -1474,7 +4757,7 @@ MAIN ENDP
             LEA DX,NL
             INT 21H
 
-            LEA DX,PINVALID
+            LEA DX,PINVALID             ;Prompt user that their input is invalid
             INT 21H
             
             LEA DX,NL
@@ -1482,7 +4765,7 @@ MAIN ENDP
             
             ;Enter Again?
             MOV AH,09H
-            LEA DX,ENTAGN
+            LEA DX,ENTAGN               ;Prompt (enter again?) Message
             INT 21H
             
             LEA DX,NL
@@ -1490,29 +4773,29 @@ MAIN ENDP
             
             ;Quit?
             MOV AH,09H
-            LEA DX,CANCEL_PAYMENT_MESSAGE
+            LEA DX,CANCEL_PAYMENT_MESSAGE       ;Prompt (Cancel payment?) Message
             INT 21H
             
             LEA DX,NL
             INT 21H
             
-            ;PROMT USER INPUT 
-            LEA DX,PROMPOPT
+            ;PROMT USER INPUT   
+            LEA DX,PROMPOPT                     ;Prompt user input
             INT 21H
             
-            MOV AH,01H
+            MOV AH,01H                          ;Read user input
             INT 21H
-            MOV PAYMENT_SELECTION_TWO,AL
+            MOV PAYMENT_SELECTION_TWO,AL        ;Mov user input into payment selection two
 
             MOV AH,09H
             LEA DX,NL
             INT 21H
             
-            CMP PAYMENT_SELECTION_TWO,'2'
+            CMP PAYMENT_SELECTION_TWO,'2'               ;If user choose 2, then quit
             JE FINISH_CASH_INPUT_INTERCHANGE ;QUIT
-            CMP PAYMENT_SELECTION_TWO,'1'
-            JNE	INVALID_CASH_INPUT
-            JMP INPUT_CASH_AGAIN
+            CMP PAYMENT_SELECTION_TWO,'1'       
+            JNE	INVALID_CASH_INPUT                      ;If user input not equal1, then jump invalid again
+            JMP INPUT_CASH_AGAIN                        ;If user choose 1, jump to input cash again
 
         ;;;;;;;;;
 
@@ -1521,117 +4804,121 @@ MAIN ENDP
         MOV AH,09H
         LEA DX,NL
         INT 21H
-        CALL DISPLAY_DASH
+        CALL DISPLAY_DASH                   ;To display a line on the screen
         LEA DX,NL
         INT 21H
 
         MOV AH,09H
-        LEA DX,TOTAL_AMOUNT_MESSAGE
+        LEA DX,TOTAL_AMOUNT_MESSAGE         ;Print the total amount message
         INT 21H
 
-        FINIT
         ; Display the total amount
-        FLD DWORD PTR [TOTALAMOUNT]
-        FILD WORD PTR [FACTOR] ; Load factor
-        FMUL
-        FISTP result          ; Store integer part in result
-        CALL DISPF
+        FLD DWORD PTR [TOTALAMOUNT]             ;Load the total amount into the FPU stack
+        FILD WORD PTR [FACTOR]                  ;Load factor(10)
+        FMUL                                    ;Multiply total amount and the factor for scalling purposes
+        FISTP result                            ;Store the result into result
+        CALL DISPF                              ;Call the display floating point function
 
         MOV AH,09H
         LEA DX,NL  
         INT 21H
-        LEA DX,PAID_AMOUNT
+        LEA DX,PAID_AMOUNT                      ;Print the message Paid Amount
         INT 21H
 
-        MOV AX,TDI
-        CMP AX,0
-        JNE PRICE_GOT_DECIMAL
+        MOV AX,TDI                              ;Compare the TDI(decimal count), if it's non zero                      
+        CMP AX,0                                ;means user got entered decimal, and the price will
+        JNE PRICE_GOT_DECIMAL                   ;need another way of scalling
 
-            ;PRICE_DON'T_GOT_DECIMAL
-            ;Display the result using DISPF
-            FINIT
-            FILD WORD PTR [PAIDAMOUNT_INT]  ; Load num1 into the FPU stack
-            FILD WORD PTR [factor] ; Load factor
-            FMUL
-            FISTP result          ; Store integer part in result
-            CALL DISPF
-            FINIT
-            FILD WORD PTR [PAIDAMOUNT_INT]  ; Load num1 into the FPU stack
-            FSTP DWORD PTR [PAIDAMOUNT_TOTAL]
-            FINISH_CASH_INPUT_INTERCHANGE:
-                JMP FINISH_CASH_INPUT
+                ;PRICE_DON'T_GOT_DECIMAL
+                FINIT                               ;Initialize the FPU stack again
+                FILD WORD PTR [PAIDAMOUNT_INT]      ;Load paid amount int into the FPU stack
+                FILD WORD PTR [factor]              ;Load factor(10)
+                FMUL                                ;Scale the paidamount int
+                FISTP result                        ;Store the answer in result
+                CALL DISPF                          ;Display the paidamount using display floating point function
+            
+                FINIT                               ;Initialize the FPU stack again
+                FILD WORD PTR [PAIDAMOUNT_INT]      ;Load paid amount int into the FPU stack
+                FSTP DWORD PTR [PAIDAMOUNT_TOTAL]   ;And store it inside paid amount total, which will need to calculate
+                FINISH_CASH_INPUT_INTERCHANGE:      ;the change for later
+
+            JMP FINISH_CASH_INPUT
+
 
         PRICE_GOT_DECIMAL:
-        ;Display the result using DISPF
-        FINIT
-        FILD WORD PTR [PAIDAMOUNT_INT]  ; Load num1 into the FPU stack
-        FISTP result          ; Store integer part in result
-        CALL DISPF
-        FINIT
-        FILD WORD PTR [PAIDAMOUNT_INT]  ; Load num1 into the FPU stack
-        FILD WORD PTR [factor] ; Load factor
-        FDIV
-        FSTP DWORD PTR [PAIDAMOUNT_TOTAL]
+
+            ;PRICE DON'T HAVE DECIMAL   
+            FINIT                                   ;Initialize the FPU stack
+            FILD WORD PTR [PAIDAMOUNT_INT]          ;Load paid amount int into the FPU stack
+            FISTP result                            ;Direct store paid amount into result, no need scalling
+            CALL DISPF                              ;Call the dislay floating point function to display it
+
+            FINIT                                   ;Initialze the FPU stack again
+            FILD WORD PTR [PAIDAMOUNT_INT]          ;Load paid amount int into the FPU stack
+            FILD WORD PTR [factor]                  ;Load factor(10)
+            FDIV                                    ;Scalling it by divide 10
+            FSTP DWORD PTR [PAIDAMOUNT_TOTAL]       ;Store the answer into the paid amount total
 
         FINISH_CASH_INPUT:
 
         ;NOW NEED TO CHECK IF THE PRICE ENTER IS ENOUGH TO PAY
-        FLD DWORD PTR [TOTALAMOUNT]
-        FLD DWORD PTR [PAIDAMOUNT_TOTAL]
-        FCOM                            ; Compare total amount and paid amount
-        FSTSW PAYMENT_STATUS_WORD   ; Store the floating-point status word in memory
-        MOV AX, PAYMENT_STATUS_WORD ; Move the status word into AX
-        SAHF                            ; Transfer status to flags
+        FINIT                                   ;Initialze the FPU stack again
+        FLD DWORD PTR [TOTALAMOUNT]             ;Load the total amount into the FPU stack
+        FLD DWORD PTR [PAIDAMOUNT_TOTAL]        ;Load the paid amount total into the FPU stack
+        FCOM                                    ;Compare total amount and paid amount
+        FSTSW PAYMENT_STATUS_WORD               ;Store the floating-point status word in payment status
+        MOV AX, PAYMENT_STATUS_WORD             ;Move the status word into AX
+        SAHF                                    ;Transfer status to flags
 
-        JAE GO_TO_PAY         ; jump if enough to pay, if not, go below
+        JAE GO_TO_PAY                           ;Jump if enough to pay, if not, go below
 
             INSUFFICIENT_CASH_INPUT:
-            ;IF INSUFFICIENT,PROMPT AGAIN?
-            MOV AH,09H
-            LEA DX,NL
-            INT 21H
-            LEA DX,NL
-            INT 21H
-            
-            LEA DX,PINSUFFICIENT
-            INT 21H
-            
-            LEA DX,NL
-            INT 21H
-            
-            ;Enter Again?
-            MOV AH,09H
-            LEA DX,ENTAGN
-            INT 21H
-            
-            LEA DX,NL
-            INT 21H
-            
-            ;Quit?
-            MOV AH,09H
-            LEA DX,CANCEL_PAYMENT_MESSAGE
-            INT 21H
-            
-            LEA DX,NL
-            INT 21H
-            
-            ;PROMT USER INPUT 
-            LEA DX,PROMPOPT
-            INT 21H
-            
-            MOV AH,01H
-            INT 21H
-            MOV PAYMENT_SELECTION_TWO,AL
+                ;IF INSUFFICIENT,PROMPT AGAIN?
+                MOV AH,09H
+                LEA DX,NL
+                INT 21H
+                LEA DX,NL
+                INT 21H
+                
+                LEA DX,PINSUFFICIENT            ;Print the insufficient message
+                INT 21H
+                
+                LEA DX,NL
+                INT 21H
+                
+                ;Enter Again?
+                MOV AH,09H
+                LEA DX,ENTAGN                   ;Prompt (Enter again?)
+                INT 21H 
+                
+                LEA DX,NL
+                INT 21H
+                
+                ;Quit?
+                MOV AH,09H
+                LEA DX,CANCEL_PAYMENT_MESSAGE   ;Prompt (Cancel Payment?)
+                INT 21H
+                
+                LEA DX,NL
+                INT 21H
+                
+                ;PROMT USER INPUT 
+                LEA DX,PROMPOPT                 ;Prompt user input
+                INT 21H
+                
+                MOV AH,01H                      ;Read user input
+                INT 21H
+                MOV PAYMENT_SELECTION_TWO,AL    ;Mov the user input into the payment selection two
 
-            MOV AH,09H
-            LEA DX,NL
-            INT 21H
-            
-            CMP PAYMENT_SELECTION_TWO,'2'
-            JE FINISH_ALL ;QUIT
-            CMP PAYMENT_SELECTION_TWO,'1'
-            JNE INSUFFICIENT_CASH_INPUT
-            JMP INPUT_CASH_AGAIN
+                MOV AH,09H
+                LEA DX,NL
+                INT 21H
+                
+                CMP PAYMENT_SELECTION_TWO,'2'       ;If user choose two, exit
+                JE FINISH_ALL ;QUIT
+                CMP PAYMENT_SELECTION_TWO,'1'
+                JNE INSUFFICIENT_CASH_INPUT         ;If user didn't press 1, go to insufficient again
+                JMP INPUT_CASH_AGAIN                ;If user choose 1, go to input cash again
 
         ;;;;;;;;;
 
@@ -1640,19 +4927,19 @@ MAIN ENDP
             LEA DX,NL
             INT 21H
 
-            LEA DX,CHANGE_AMOUNT
+            LEA DX,CHANGE_AMOUNT                ;Print the message (Change Amount: )
             INT 21H
 
-            FLD DWORD PTR [TOTALAMOUNT]
-            FSTP DWORD PTR [TEMP_TOTAL_AMOUNT]
-            FINIT
-            FLD DWORD PTR [PAIDAMOUNT_TOTAL]
-            FLD DWORD PTR [TEMP_TOTAL_AMOUNT]
-            FSUB
-            FILD WORD PTR [FACTOR]
-            FMUL
-            FISTP result
-            CALL DISPF
+            FLD DWORD PTR [TOTALAMOUNT]         ;Load the totalamount into the FPU stack
+            FSTP DWORD PTR [TEMP_TOTAL_AMOUNT]  ;Store it inside temporary variable
+            FINIT                               ;Initialize the FPU stack
+            FLD DWORD PTR [PAIDAMOUNT_TOTAL]    ;Load the Paid amount total into the FPU stack
+            FLD DWORD PTR [TEMP_TOTAL_AMOUNT]   ;Load the temporary total amount into the FPU stack
+            FSUB                                ;Subtract the two value from above
+            FILD WORD PTR [FACTOR]              ;Load the factor(10)
+            FMUL                                ;Multiply the answer with the factor
+            FISTP result                        ;Store the answer inside result
+            CALL DISPF                          ;Call the display floating point function
 
         FINISH_ALL:
 
@@ -1676,25 +4963,18 @@ MAIN ENDP
         PUSH DI
         PUSH SI
 
-        MOV CX,8
+        MOV CX,8                                ;Loop for eight times, because got 8 books
         MOV SI,0
         MOV DI,0
         MOV BX,0
         DEDUCT:
         XOR BX,BX
-            MOV BL,BOOK_ORDER_QUANTITY[DI]
-            SUB LeftQuantity[SI],BX
-            ADD SoldQuantity[SI],BX
+            MOV BL,BOOK_ORDER_QUANTITY[DI]      ;Mov book order quantity into BL
+            SUB LeftQuantity[SI],BX             ;Deduct the order quantity from the left quantity
+            ADD SoldQuantity[SI],BX             ;Increase the sold quantity
             ADD SI,2
             INC DI
         LOOP DEDUCT
-
-        ;MOV CX,8
-        ;MOV DI,0
-        ;INITIALIZE_BOOK_ORDER_QUANTITY:
-            ;MOV BOOK_ORDER_QUANTITY[DI],0
-            ;INC DI
-        ;LOOP INITIALIZE_BOOK_ORDER_QUANTITY
 
         ; Restore registers
         POP SI
@@ -1751,7 +5031,7 @@ MAIN ENDP
         LEA DX,NL
         INT 21H
             
-        lEA DX,ORDER_CONFIRMATION_MESSAGE
+        lEA DX,ORDER_CONFIRMATION_MESSAGE       ;Prompt if user confirm to place the order or not?
         INT 21H
             
         LEA DX,NL
@@ -1766,7 +5046,7 @@ MAIN ENDP
         LEA DX,DOT
         INT 21H
             
-        LEA DX,ORDER_CONFIRM
+        LEA DX,ORDER_CONFIRM                ;Prompt order confirm
         INT 21H
             
         LEA DX,NL
@@ -1774,24 +5054,24 @@ MAIN ENDP
             
         ;Quit?
         MOV AH,09H	
-        LEA DX,CANCEL_PAYMENT_MESSAGE
+        LEA DX,CANCEL_PAYMENT_MESSAGE       ;Prompt payment cancel
         INT 21H
             
         LEA DX,NL
         INT 21H
             
         ;PROMT USER INPUT 
-        LEA DX,PROMPOPT
+        LEA DX,PROMPOPT                     ;Prompt user input
         INT 21H
             
-        MOV AH,01H
+        MOV AH,01H                          ;Read user input
         INT 21H
-        MOV PAYMENT_SELECTION_TWO,AL
+        MOV PAYMENT_SELECTION_TWO,AL        ;Mov user input into payment selection
             
         CMP PAYMENT_SELECTION_TWO,'1'
-        JE ORDER_CONFIRMED ;order confirm
+        JE ORDER_CONFIRMED ;order confirm       ;If user choose 1, order confirm
         CMP PAYMENT_SELECTION_TWO,'2'
-        JE ORDER_CANCEL_INTERCHANGE
+        JE ORDER_CANCEL_INTERCHANGE             ;If user choose 2, payment canceled
 
             INVALID_ORDER_CONFIRM_INPUT:
             ;IF INVALID,PROMPT CONTINUE?
@@ -1801,7 +5081,7 @@ MAIN ENDP
             LEA DX,NL
             INT 21H
             
-            LEA DX,PINVALID
+            LEA DX,PINVALID                    ;Prompt user invalid message
             INT 21H
             
             LEA DX,NL
@@ -1809,7 +5089,7 @@ MAIN ENDP
             
             ;Enter Again?
             MOV AH,09H
-            LEA DX,ENTAGN
+            LEA DX,ENTAGN                       ;Prompt user to enter again or not
             INT 21H
             
             LEA DX,NL
@@ -1817,25 +5097,25 @@ MAIN ENDP
             
             ;Quit?
             MOV AH,09H
-            LEA DX,CANCEL_PAYMENT_MESSAGE
+            LEA DX,CANCEL_PAYMENT_MESSAGE       ;Prompt user to cancel payment or not
             INT 21H
             
             LEA DX,NL
             INT 21H
             
             ;PROMT USER INPUT 
-            LEA DX,PROMPOPT
+            LEA DX,PROMPOPT                     ;Prompt user input
             INT 21H
             
-            MOV AH,01H
+            MOV AH,01H                          ;Read user input
             INT 21H
             MOV PAYMENT_SELECTION_TWO,AL
             
             CMP PAYMENT_SELECTION_TWO,'2'
-            JE ORDER_CANCEL
+            JE ORDER_CANCEL                             ;If user choose 2, order canceled
             CMP PAYMENT_SELECTION_TWO,'1'
-            JNE INVALID_ORDER_CONFIRM_INPUT
-            JMP lOOP_ORDER_CONFIRMATION ;order confirm
+            JNE INVALID_ORDER_CONFIRM_INPUT             ;If user didn't press 1, invalid
+            JMP lOOP_ORDER_CONFIRMATION                 ;If user choose 1, order confirmed
 
             ORDER_CANCEL_INTERCHANGE:
             JMP ORDER_CANCEL
@@ -1843,40 +5123,28 @@ MAIN ENDP
         ;;;;;;;;;
 
         ORDER_CONFIRMED:
-        ;DISPLAY ORDER CONFIRM
         MOV AH,09
-
         LEA DX,NL
         INT 21H
         LEA DX,NL
         INT 21H
 
         MOV AH,09H
-        LEA DX,ORDER_CONFIRM_MESSAGE
+        LEA DX,ORDER_CONFIRM_MESSAGE            ;Display order confirm message
         INT 21H
-        ;UPDATE ITERATTION
-        INC COUNT_PAYMENT_MADE
-        ;STORE ARRAY HERE, AND DEDUCT QUANTITY, ALL KIND OF UPDATE	
-        CALL DEDUCTBOOK
-        ; Store total amount in TOTALAMOUNT
-        ;MOV AX,COUNT_PAYMENT_MADE
-        ;DEC COUNT_PAYMENT_MADE
-        ;MOV DI,AX
-        ;FLD DWORD PTR [TOTALAMOUNT] 
-        ;FSTP DWORD PTR [TOTALP[DI]]
+
+        CALL DEDUCTBOOK                         ;Call the deduct book function
         JMP END_OF_PAYMENT
 
         ;;;;;
         ORDER_CANCEL:
-        ;DISPLAY ORDER CANCEL
         MOV AH,09  
-
         LEA DX,NL
         INT 21H
         LEA DX,NL
         INT 21H
 
-        LEA DX,ORDER_CANCEL_MESSAGE
+        LEA DX,ORDER_CANCEL_MESSAGE            ;Prompt order canceled
         INT 21H
 
         END_OF_PAYMENT:
