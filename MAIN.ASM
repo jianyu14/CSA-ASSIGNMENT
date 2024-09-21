@@ -522,8 +522,9 @@ MAIN ENDP
 
 ;SEARCH_BOOK_FUNCTION
     SEARCH_BOOK_FUNCTION_MAIN PROC
-        CALL MENU 
+        CALL MENU ;Display the search function menu 
 
+	;Display the message to ask the user want to continue searching or not
         CONTINUE_9:
 
         MOV AH,09H
