@@ -536,7 +536,7 @@ MAIN ENDP
         LEA DX,NL
         INT 21H
 
-	；ask the user want to continue searching or not
+	;ask the user want to continue searching or not
         LEA DX,QUESTION_THREE
         INT 21H
 
