@@ -105,6 +105,7 @@
 	SEARCH_MENU_2 DB "2.Search by author$"
 	SEARCH_MENU_3 DB "3.Search by genre$"
 	SEARCH_MENU_4 DB "4.Display All$"
+	SEARCH_MENU_5 DB "5.Back to Main Menu$"
 	CONFIRM_SELECTION DB "You have select $"
 	INPUT_BOOK_TITLE DB "Please enter the book title: $"
 	D_TITLE DB "TITLE : $"
@@ -124,7 +125,7 @@
 	HEARDER_SEARCH_ALL DB "ALL BOOK$"
 	QUESTION_ONE DB "Enter your choice: $"
 	QUESTION_TWO DB "Enter your choice (Enter 1 for Horror): $"
-	QUESTION_THREE DB "Do you want to search for another? : $"
+	QUESTION_THREE DB "Do you want to search for another?  (Y/N) : $"
 	QUESTION_FOUR DB "Please enter the author last name (LOKE XIN YEE = LOKE): $"
 	ERROR_MESSAGE_ONE DB "Invalid input. Please enter again.$"
 	ERROR_MESSAGE_TWO DB "Cannot found the book title. Please enter again.$"
@@ -524,7 +525,7 @@ MAIN ENDP
     SEARCH_BOOK_FUNCTION_MAIN PROC
         CALL MENU ;Display the search function menu 
 
-	;Display the message to ask the user want to continue searching or not
+		;Display the message to ask the user want to continue searching or not
         CONTINUE_9:
 
         MOV AH,09H
@@ -552,9 +553,25 @@ MAIN ENDP
         INT 21H
 
         CMP SEARCH_SELECTION_THREE,'Y'
-        JNE FIN_M
+        JNE CONTINUE_10
 
-        CALL MENU    
+        CALL MENU
+
+		CONTINUE_10:
+		CMP SEARCH_SELECTION_THREE,'N'
+        JNE ERROR_M
+
+        CALL MAIN_AGAIN
+
+		ERROR_M:
+		MOV AH,09H
+		LEA DX,ERROR_MESSAGE_ONE
+		INT 21H
+
+		LEA DX,NL
+		INT 21H 
+
+		JMP CONTINUE_9
 
         FIN_M:
         RET
@@ -2647,9 +2664,6 @@ MAIN ENDP
         LEA DX,NL
         INT 21H
 
-        LEA DX,NL
-        INT 21H
-
         LEA DX,D_TITLE
         INT 21H
 
@@ -2831,9 +2845,6 @@ MAIN ENDP
         INT 21H
 
         LEA DX,LINE
-        INT 21H
-
-        LEA DX,NL
         INT 21H
 
         LEA DX,NL
@@ -3111,9 +3122,6 @@ MAIN ENDP
         LEA DX,NL
         INT 21H
 
-        LEA DX,NL
-        INT 21H
-
         LEA DX,D_TITLE
         INT 21H
 
@@ -3190,7 +3198,7 @@ MAIN ENDP
         MOV DX,AX             
         MOV AH,09H           
         INT 21H 
-        JMP FIN_G
+        JMP CONTINUE_9
 
         ;Non-fiction
         NF:
@@ -3209,9 +3217,6 @@ MAIN ENDP
         INT 21H
 
         LEA DX,LINE
-        INT 21H
-
-        LEA DX,NL
         INT 21H
 
         LEA DX,NL
@@ -3317,9 +3322,6 @@ MAIN ENDP
         LEA DX,NL
         INT 21H
 
-        LEA DX,NL
-        INT 21H
-
         LEA DX,D_TITLE
         INT 21H
 
@@ -3417,7 +3419,10 @@ MAIN ENDP
         MOV AX,@DATA
         MOV DS,AX
 
-        MOV AH,09H
+		MOV AH,09H
+		LEA DX,NL
+        INT 21H
+
         LEA DX,LINE
         INT 21H
 
@@ -3462,6 +3467,12 @@ MAIN ENDP
         LEA DX,NL
         INT 21H
 
+		LEA DX,SEARCH_MENU_5
+        INT 21H
+
+        LEA DX,NL
+        INT 21H
+
         ;ask user enter thier choose
         MOV AH,09H
         LEA DX,QUESTION_ONE
@@ -3482,9 +3493,9 @@ MAIN ENDP
         JMP ERROR       ; If not, jump to ERROR
 
         CONTINUE_1:
-        ; Validation if ans1 > 3
-        CMP SEARCH_SELECTION_ONE, 4
-        JBE CONTINUE_2  ; Jump if SEARCH_SELECTION_ONE <= 3
+        ; Validation if ans1 > 5
+        CMP SEARCH_SELECTION_ONE, 5
+        JBE CONTINUE_2  ; Jump if SEARCH_SELECTION_ONE <= 5
         JMP ERROR      ; If not, jump to ERROR
 
             
@@ -3523,9 +3534,15 @@ MAIN ENDP
 
         OP4:
         CMP SEARCH_SELECTION_ONE,4
-        JNE ERROR
+        JNE OP5
 
         CALL D_ALL
+
+		OP5:
+        CMP SEARCH_SELECTION_ONE,5
+        JNE ERROR
+
+        CALL MAIN_AGAIN
 
         ;Invalid input
         ERROR:
