@@ -773,7 +773,7 @@ MAIN ENDP
         FMUL                  ; Multiply result by factor to scale
         FISTP result          ; Store integer part in result
 
-        CALL DISPF  ;below no need, do until here is cukup   
+        CALL DISPF     
 
         MOV AH,09H
         LEA DX,NL
@@ -859,7 +859,7 @@ MAIN ENDP
         FMUL                  ; Multiply result by factor to scale
         FISTP result          ; Store integer part in result
 
-        CALL DISPF  ;below no need, do until here is cukup
+        CALL DISPF 
 
         MOV AH,09H
         LEA DX,NL
@@ -939,7 +939,7 @@ MAIN ENDP
         FMUL                  ; Multiply result by factor to scale
         FISTP result          ; Store integer part in result
 
-        CALL DISPF  ;below no need, do until here is cukup   
+        CALL DISPF  
 
         MOV AH,09H
         LEA DX,NL
@@ -1025,7 +1025,7 @@ MAIN ENDP
         FMUL                  ; Multiply result by factor to scale
         FISTP result          ; Store integer part in result
 
-        CALL DISPF  ;below no need, do until here is cukup    
+        CALL DISPF  
 
         MOV AH,09H
         LEA DX,NL
@@ -1105,7 +1105,7 @@ MAIN ENDP
         FMUL                  ; Multiply result by factor to scale
         FISTP result          ; Store integer part in result
 
-        CALL DISPF  ;below no need, do until here is cukup    
+        CALL DISPF    
 
         MOV AH,09H
         LEA DX,NL
@@ -1191,7 +1191,7 @@ MAIN ENDP
         FMUL                  ; Multiply result by factor to scale
         FISTP result          ; Store integer part in result
 
-        CALL DISPF  ;below no need, do until here is cukup    
+        CALL DISPF   
 
         MOV AH,09H
         LEA DX,NL
@@ -1432,6 +1432,7 @@ MAIN ENDP
         MOV AX,@DATA
         MOV DS,AX
 
+	;Display the header
         MOV AH,09H
         LEA DX,NL
         INT 21H
@@ -1474,7 +1475,7 @@ MAIN ENDP
         LEA DX,NL
         INT 21H
 
-        ;Compare with WHISPERS
+        ;Compare the input with WHISPERS character by character
         WHISPERS_CBC:
         MOV CL,ACTS
         MOV SI,1
@@ -1484,7 +1485,7 @@ MAIN ENDP
 
             MOV BH,BOOKNAME_FOR_SEARCH[SI]
             CMP INPUTSTR[DI],BH
-            JNE ECHO_CBC
+            JNE ECHO_CBC ;if the input and the current book not same, jump to next book
 
             INC SI
             INC DI
@@ -1492,17 +1493,18 @@ MAIN ENDP
 
         LOOP L2
 
+	    ;Compare the length
             WHISPERS_LENGTH:
             MOV SI,0
             MOV DL,BL
             ADD DL,30H
             CMP DL,BOOKNAME_FOR_SEARCH[SI]
-            JNE ECHO_CBC
+            JNE ECHO_CBC ;if the input and the current book not same, jump to next book
 
-            JMP WP1
+            JMP WP1 ;if the input and the current book is same, jump to display the book information
 
 
-        ;Compare with ECHO
+        ;Compare the input with ECHO character by character
         ECHO_CBC:
         MOV CL,ACTS
         MOV SI,11
@@ -1512,7 +1514,7 @@ MAIN ENDP
 
             MOV AL,BOOKNAME_FOR_SEARCH[SI]
             CMP INPUTSTR[DI],AL
-            JNE LOCKET_CBC
+            JNE LOCKET_CBC ;if the input and the current book not same, jump to next book
 
             INC SI
             INC DI
@@ -1520,16 +1522,17 @@ MAIN ENDP
 
         LOOP L3
 
+	    ;Compare the length
             ECHO_LENGTH:
             MOV SI,10
             MOV DL,BL
             ADD DL,30H
             CMP DL,BOOKNAME_FOR_SEARCH[SI]
-            JNE LOCKET_CBC
+            JNE LOCKET_CBC ;if the input and the current book not same, jump to next book
 
-            JMP EH1
+            JMP EH1 ;if the input and the current book is same, jump to display the book information
 
-        ;Compare with LOCKET
+       ;Compare the input with LOCKET character by character
         LOCKET_CBC:
         MOV CL,ACTS
         MOV SI,17
@@ -1539,7 +1542,7 @@ MAIN ENDP
 
             MOV AL,BOOKNAME_FOR_SEARCH[SI]
             CMP INPUTSTR[DI],AL
-            JNE WILLOW_CBC
+            JNE WILLOW_CBC ;if the input and the current book not same, jump to next book
 
             INC SI
             INC DI
@@ -1547,16 +1550,17 @@ MAIN ENDP
 
         LOOP L4
 
+	    ;Compare the length
             LOCKET_LENGTH:
             MOV SI,16
             MOV DL,BL
             ADD DL,30H
             CMP DL,BOOKNAME_FOR_SEARCH[SI]
-            JNE WILLOW_CBC
+            JNE WILLOW_CBC ;if the input and the current book not same, jump to next book
 
-            JMP LK1
+            JMP LK1 ;if the input and the current book is same, jump to display the book information
 
-        ;Compare with WILLOW
+        ;Compare the input with WILLOW character by character
         WILLOW_CBC:
         MOV CL,ACTS
         MOV SI,25
@@ -1566,7 +1570,7 @@ MAIN ENDP
 
             MOV AL,BOOKNAME_FOR_SEARCH[SI]
             CMP INPUTSTR[DI],AL
-            JNE RD_CBC
+            JNE RD_CBC ;if the input and the current book not same, jump to next book
 
             INC SI
             INC DI
@@ -1574,16 +1578,17 @@ MAIN ENDP
 
         LOOP L5
 
+	    ;Compare the length
             WILLOW_LENGTH:
             MOV SI,24
             MOV DL,BL
             ADD DL,30H
             CMP DL,BOOKNAME_FOR_SEARCH[SI]
-            JNE RD_CBC
+            JNE RD_CBC ;if the input and the current book not same, jump to next book
 
-            JMP WL1
+            JMP WL1 ;if the input and the current book is same, jump to display the book information
 
-        ;Compare with Rendezvous
+        ;Compare the input with RENDEZVOUS character by character
         RD_CBC:
         MOV CL,ACTS
         MOV SI,34
@@ -1593,7 +1598,7 @@ MAIN ENDP
 
             MOV AL,BOOKNAME_FOR_SEARCH[SI]
             CMP INPUTSTR[DI],AL
-            JNE CRIMSON_CBC
+            JNE CRIMSON_CBC  ;if the input and the current book not same, jump to next book
 
             INC SI
             INC DI
@@ -1601,16 +1606,9 @@ MAIN ENDP
 
         LOOP L6
 
-            ;ERROR CODE
-            ;MOV SI,32
-            ;MOV DL,BL
-            ;ADD DL,30H
-            ;CMP DL,BOOKNAME_FOR_SEARCH[SI]
-            ;JNE E
+            JMP RD1 ;if the input and the current book is same, jump to display the book information
 
-            JMP RD1
-
-        ;Compare with Crimson
+        ;Compare the input with CRIMSON character by character
         CRIMSON_CBC:
         MOV CL,ACTS
         MOV SI,46
@@ -1620,7 +1618,7 @@ MAIN ENDP
 
             MOV AL,BOOKNAME_FOR_SEARCH[SI]
             CMP INPUTSTR[DI],AL
-            JNE SHADOWS_CBC
+            JNE SHADOWS_CBC  ;if the input and the current book not same, jump to next book
 
             INC SI
             INC DI
@@ -1628,16 +1626,17 @@ MAIN ENDP
 
         LOOP L7
 
+	    ;Compare the length
             CRIMSON_LENGTH:
             MOV SI,45
             MOV DL,BL
             ADD DL,30H
             CMP DL,BOOKNAME_FOR_SEARCH[SI]
-            JNE SHADOWS_CBC
+            JNE SHADOWS_CBC  ;if the input and the current book not same, jump to next book
 
-            JMP CR1
+            JMP CR1 ;if the input and the current book is same, jump to display the book information
 
-        ;Compare with SHADOWS
+       ;Compare the input with SHADOWS character by character
         SHADOWS_CBC:
         MOV CL,ACTS
         MOV SI,55
@@ -1647,7 +1646,7 @@ MAIN ENDP
 
             MOV AL,BOOKNAME_FOR_SEARCH[SI]
             CMP INPUTSTR[DI],AL
-            JNE MEMORIES_CBC
+            JNE MEMORIES_CBC ;if the input and the current book not same, jump to next book
 
             INC SI
             INC DI
@@ -1655,16 +1654,17 @@ MAIN ENDP
 
         LOOP L8
 
+	    ;Compare the length
             SHADOWS_LENGTH:
             MOV SI,54
             MOV DL,BL
             ADD DL,30H
             CMP DL,BOOKNAME_FOR_SEARCH[SI]
-            JNE MEMORIES_CBC
+            JNE MEMORIES_CBC ;if the input and the current book not same, jump to next book
 
-            JMP SD1
+            JMP SD1 ;if the input and the current book is same, jump to display the book information
 
-        ;Compare with MEMORIES
+        ;Compare the input with MEMORIES character by character
         MEMORIES_CBC:
         MOV CL,ACTS
         MOV SI,64
@@ -1674,7 +1674,7 @@ MAIN ENDP
 
             MOV AL,BOOKNAME_FOR_SEARCH[SI]
             CMP INPUTSTR[DI],AL
-            JNE ER2
+            JNE ER2  ;if the input and the current book not same, display the error message
 
             INC SI
             INC DI
@@ -1682,26 +1682,26 @@ MAIN ENDP
 
         LOOP L9
 
+	    ;Compare the length
             MEMORIES_LENGTH:
             MOV SI,63
             MOV DL,BL
             ADD DL,30H
             CMP DL,BOOKNAME_FOR_SEARCH[SI]
-            JNE ER2
+            JNE ER2 ;if the input and the current book not same, display the error message
 
-            JMP MM1
+            JMP MM1 ;if the input and the current book is same, jump to display the book information
 
         ER2:
             JMP ERROR_T
 
-
+	;WHISPERS
         WP1:
-
+	
         MOV AH,09H
         LEA DX,D_TITLE
         INT 21H
 
-        ;WHISPERS
         ;Display bookname
         MOV SI,OFFSET BOOK
         ADD SI,0
@@ -1717,7 +1717,6 @@ MAIN ENDP
         INT 21H  
         
         ;Display bookprice
-        ;Price
         ; Load the floating-point values into the FPU and multiply
         MOV DI,0
         FLD DWORD PTR [Price[DI]]  ; Load num1 into the FPU stack
@@ -1725,7 +1724,7 @@ MAIN ENDP
         FMUL                  ; Multiply result by factor to scale
         FISTP result          ; Store integer part in result
 
-        CALL DISPF  ;below no need, do until here is cukup    
+        CALL DISPF  
 
         MOV AH,09H
         LEA DX,NL
@@ -1797,15 +1796,16 @@ MAIN ENDP
         MOV AH,09H
         LEA DX,NL
         INT 21H
-        JMP CONTINUE_9
 
+        JMP CONTINUE_9 ;End this author and jump to continue_9 to ask the user want to continue or not
+
+	;ECHO
         EH1:
 
         MOV AH,09H
         LEA DX,D_TITLE
         INT 21H
 
-        ;ECHO
         ;Display bookname
         MOV SI,OFFSET BOOK
         ADD SI,2
@@ -1821,7 +1821,6 @@ MAIN ENDP
         INT 21H  
         
         ;Display bookprice
-        ;Price
         ; Load the floating-point values into the FPU and multiply
         MOV DI,4
         FLD DWORD PTR [Price[DI]]  ; Load num1 into the FPU stack
@@ -1829,7 +1828,7 @@ MAIN ENDP
         FMUL                  ; Multiply result by factor to scale
         FISTP result          ; Store integer part in result
 
-        CALL DISPF  ;below no need, do until here is cukup    
+        CALL DISPF    
 
         MOV AH,09H
         LEA DX,NL
@@ -1898,16 +1897,15 @@ MAIN ENDP
         LEA DX,NL
         INT 21H
 
-        JMP CONTINUE_9
+        JMP CONTINUE_9 ;End this author and jump to continue_9 to ask the user want to continue or not
 
-
+	;LOCKET
         LK1:
 
         MOV AH,09H 
         LEA DX,D_TITLE
         INT 21H
 
-        ;LOCKET
         ;Display bookname
         MOV SI,OFFSET BOOK
         ADD SI,4
@@ -1931,7 +1929,7 @@ MAIN ENDP
         FMUL                  ; Multiply result by factor to scale
         FISTP result          ; Store integer part in result
 
-        CALL DISPF  ;below no need, do until here is cukup      
+        CALL DISPF      
 
         MOV AH,09H
         LEA DX,NL
@@ -2000,15 +1998,15 @@ MAIN ENDP
         LEA DX,NL
         INT 21H
 
-        JMP CONTINUE_9
+        JMP CONTINUE_9 ;End this author and jump to continue_9 to ask the user want to continue or not
 
+	;WILLOW
         WL1:
 
         MOV AH,09H
         LEA DX,D_TITLE
         INT 21H
 
-        ;WILLOW
         ;Display bookname
         MOV SI,OFFSET BOOK
         ADD SI,6
@@ -2024,7 +2022,6 @@ MAIN ENDP
         INT 21H  
         
         ;Display bookprice
-        ;Price
         ; Load the floating-point values into the FPU and multiply
         MOV DI,12
         FLD DWORD PTR [Price[DI]]  ; Load num1 into the FPU stack
@@ -2032,7 +2029,7 @@ MAIN ENDP
         FMUL                  ; Multiply result by factor to scale
         FISTP result          ; Store integer part in result
 
-        CALL DISPF  ;below no need, do until here is cukup     
+        CALL DISPF      
 
         MOV AH,09H
         LEA DX,NL
@@ -2101,8 +2098,9 @@ MAIN ENDP
         LEA DX,NL
         INT 21H
 
-        JMP CONTINUE_9
+        JMP CONTINUE_9 ;End this author and jump to continue_9 to ask the user want to continue or not
 
+	;RENDEZVOUS
         RD1:
 
         MOV AH,09H
@@ -2132,7 +2130,7 @@ MAIN ENDP
         FMUL                  ; Multiply result by factor to scale
         FISTP result          ; Store integer part in result
 
-        CALL DISPF  ;below no need, do until here is cukup     
+        CALL DISPF      
 
         MOV AH,09H
         LEA DX,NL
@@ -2182,7 +2180,7 @@ MAIN ENDP
         MOV AH,09H           
         INT 21H 
 
-    MOV AH,09H
+    	MOV AH,09H
         LEA DX,NL
         INT 21H
 
@@ -2201,15 +2199,15 @@ MAIN ENDP
         LEA DX,NL
         INT 21H
 
-        JMP CONTINUE_9
+        JMP CONTINUE_9 ;End this author and jump to continue_9 to ask the user want to continue or not
 
+	;CRIMSON
         CR1:
 
         MOV AH,09H
         LEA DX,D_TITLE
         INT 21H
 
-        ;CRIMSON
         ;Display bookname
         MOV SI,OFFSET BOOK
         ADD SI,10
@@ -2233,7 +2231,7 @@ MAIN ENDP
         FMUL                  ; Multiply result by factor to scale
         FISTP result          ; Store integer part in result
 
-        CALL DISPF  ;below no need, do until here is cukup      
+        CALL DISPF    
 
         MOV AH,09H
         LEA DX,NL
@@ -2302,8 +2300,9 @@ MAIN ENDP
         LEA DX,NL
         INT 21H
 
-        JMP CONTINUE_9
+        JMP CONTINUE_9 ;End this author and jump to continue_9 to ask the user want to continue or not
 
+	;SHADOWS
         SD1:
 
         MOV AH,09H
@@ -2325,7 +2324,6 @@ MAIN ENDP
         INT 21H  
         
         ;Display bookprice
-        ;Price
         ; Load the floating-point values into the FPU and multiply
         MOV DI,24
         FLD DWORD PTR [Price[DI]]  ; Load num1 into the FPU stack
@@ -2333,7 +2331,7 @@ MAIN ENDP
         FMUL                  ; Multiply result by factor to scale
         FISTP result          ; Store integer part in result
 
-        CALL DISPF  ;below no need, do until here is cukup     
+        CALL DISPF    
 
         MOV AH,09H
         LEA DX,NL
@@ -2402,8 +2400,9 @@ MAIN ENDP
         LEA DX,NL
         INT 21H
 
-        JMP CONTINUE_9
+        JMP CONTINUE_9 ;End this author and jump to continue_9 to ask the user want to continue or not
 
+	;MEMORIES
         MM1:
 
         MOV AH,09H
@@ -2425,7 +2424,6 @@ MAIN ENDP
         INT 21H  
         
         ;Display bookprice
-        ;Price
         ; Load the floating-point values into the FPU and multiply
         MOV DI,28
         FLD DWORD PTR [Price[DI]]  ; Load num1 into the FPU stack
@@ -2433,7 +2431,7 @@ MAIN ENDP
         FMUL                  ; Multiply result by factor to scale
         FISTP result          ; Store integer part in result
 
-        CALL DISPF  ;below no need, do until here is cukup     
+        CALL DISPF 
 
         MOV AH,09H
         LEA DX,NL
@@ -2502,17 +2500,17 @@ MAIN ENDP
         LEA DX,NL
         INT 21H
         
-        JMP CONTINUE_9
+        JMP CONTINUE_9 ;End this author and jump to continue_9 to ask the user want to continue or not
 
         ;Invalid input
         ERROR_T:
                 MOV AH,09H
-                LEA DX,ERROR_MESSAGE_TWO
+                LEA DX,ERROR_MESSAGE_TWO ;Display the error massege and ask the user enter again
                 INT 21H
 
                 LEA DX,NL
                 INT 21H
-                JMP TITLE_L
+                JMP TITLE_L ;jump to the TITLE_L
 
     TITLE_F ENDP
 
