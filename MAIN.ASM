@@ -2519,6 +2519,7 @@ MAIN ENDP
         MOV AX,@DATA
         MOV DS,AX
 
+	;Display the header
         MOV AH,09H
         LEA DX,NL
         INT 21H
@@ -2539,6 +2540,7 @@ MAIN ENDP
         INT 21H
 
         GENRE_L:
+	;display all genre
         LEA DX,NL
         INT 21H
 
