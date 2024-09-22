@@ -175,9 +175,10 @@
     COLUMN_ORDERED_HEADERS DB 'No. Book Order      Order Quantity', 0DH, 0AH, '$'
     BOOK_NO DB 1
     QUANTITY_COLUMN_SPACE DB '       ', '$'
+    QUIT_CREATE_ORDER DB "Back to Main Menu", 0AH,0DH,"$"
 
-    ORDER_INPUT_TITLE DB 0AH,0DH,"Enter the option to order book (1-8): $"
-    INVALID_OPTION DB 0AH,0DH,"Invalid option. Please enter valid option (1-8). ", 0AH,0DH, "$"
+    ORDER_INPUT_TITLE DB 0AH,0DH,"Enter the option to order book (1-9): $"
+    INVALID_OPTION DB 0AH,0DH,"Invalid option. Please enter valid option (1 - 9). ", 0AH,0DH, "$"
     BOOK_QUANTITY_TITLE1 DB 0AH,0DH,"Enter the quantity to order or edit order quantity ($"
     BOOK_QUANTITY_TITLE2 DB "): $"
     INVALID_QUANTITY DB 0AH,0DH,"Invalid quantity. Enter a 1 or 2-digit number. ", 0AH,0DH, "$"
@@ -3456,7 +3457,10 @@ MAIN ENDP
             INT 21H
 
             CALL DISPLAY_BOOK_LIST
-            CALL GET_BOOK_OPTION
+            CALL GET_BOOK_OPTION                      ; Check if user want to quit
+            CMP OPTION, 9
+            JE CANCEL_ORDER_LABEL
+
             CALL GET_QUANTITY
             CALL ASK_ADD_ORDER
             CMP AL, 'Y'
@@ -3536,7 +3540,7 @@ MAIN ENDP
 
         CALL DISPLAY_DASH
 
-        ; Loop through BOOK array and print each string with its number (1-8)
+        ; Loop through BOOK array and print each string with its number (1 - 9)
         MOV CX, 8            ; size of book array
         MOV SI, 0            ; Index for BOOK array
         MOV DI,0
@@ -3547,7 +3551,7 @@ MAIN ENDP
             
             MOV AH, 02H          
             MOV DL, BOOK_NO           
-            ADD DL, 30H          ; Convert number to ASCII (1 - 8)
+            ADD DL, 30H          ; Convert number to ASCII (1 - 9)
             INT 21H
 
             INC BOOK_NO          ; Increase book no.
@@ -3582,6 +3586,20 @@ MAIN ENDP
             ADD SI, 2                        ; Move to the next BOOK (each is 2 bytes)
             ADD DI,4                         ; Move to the next PRICE (each is 4 bytes)
         LOOP BOOK_LIST
+
+
+        MOV AH, 02H          
+        MOV DL, BOOK_NO           
+        ADD DL, 30H          
+        INT 21H
+
+        MOV AH,09H
+        LEA DX,DOT
+        INT 21H
+
+        MOV AH,09H
+        LEA DX,QUIT_CREATE_ORDER
+        INT 21H
 
         RET                                  ; Return
     DISPLAY_BOOK_LIST ENDP
@@ -3641,11 +3659,13 @@ MAIN ENDP
         SUB AL, 30H                         ; To input digit
         MOV OPTION, AL                      ; Move the input option to OPTION variable
 
-        ; Validate the input (should be between 1 and 8)
+        ; Validate the input (should be between 1 - 9)
         CMP OPTION, 1
         JL INVALID_OPTION_INPUT
-        CMP OPTION, 8
+        CMP OPTION, 9
         JG INVALID_OPTION_INPUT
+        CMP OPTION, 9
+        JE GET_BOOK_OPTION_END
 
         MOV AL, OPTION                      ; Move option to AL
         DEC AL                              ; Subtract 1 (since options are 1-based, array is 0-based)
