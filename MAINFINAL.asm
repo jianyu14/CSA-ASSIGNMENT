@@ -184,7 +184,7 @@
     QUANTITY_LARGER DB 0AH,0DH,"The quantity is larger than stock quantity. Please enter again. ", 0AH,0DH, "$"
     ADD_ORDER_TITLE DB 0AH,0DH,"Any other book to order or edit? (Y/N): $"
     INVALID_ORDER DB 0AH,0DH,"Invalid input. You must enter Y/N only. ", 0AH,0DH, "$"
-    ORDER_NULL_MESSAGE DB 0AH,0DH,"You have no order made. ", 0AH,0DH,"$"
+    ORDER_NULL_MESSAGE DB 0AH,0DH,"You have no order placed. ", 0AH,0DH,"$"
     CONFIRM_ORDER_TITLE DB 0AH,0DH,"Are you sure you want to proceed order? (Y/N): $"
     CANCEL_ORDER_MESSAGE DB 0AH,0DH,"Your order is cancelled. ", 0AH,0DH,"$"
 ;;;;;
