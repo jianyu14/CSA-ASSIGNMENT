@@ -5253,13 +5253,6 @@ MAIN ENDP
         ; Display left quantity
         CALL DISPLAY_QUANTITY
 
-
-
-        ; Display New Line
-        ;MOV AH, 09H
-        ;LEA DX, NL
-        ;INT 21H
-
         ; Increment SI by 2 to point to the next word (since addresses are word-sized)
         ADD SI, 2
 
