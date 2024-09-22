@@ -86,11 +86,11 @@
 
 
 ;Genre Data
-	HORROR DB "Horror        $"
-    ROMANCE DB "Romance       $"
-    ADVENTURE DB "Adventure     $"
+	HORROR      DB "Horror        $"
+    ROMANCE     DB "Romance       $"
+    ADVENTURE   DB "Adventure     $"
     NON_FICTION DB "Non-fiction   $"
-    EDUCATION DB "Education     $"
+    EDUCATION   DB "Education     $"
 
 	GENRE DW OFFSET ROMANCE, OFFSET HORROR, OFFSET ADVENTURE, OFFSET EDUCATION, OFFSET ROMANCE
             DW OFFSET NON_FICTION, OFFSET HORROR, OFFSET ROMANCE
@@ -128,10 +128,10 @@
 
 	BOOKNAME_FOR_SEARCH DB "7WHISPERS$", "4ECHO$", "6LOCKET$", "6WILLOW$", "10RENDEZVOUS$", "7CRIMSON$", "7SHADOWS$", "8MEMORIES$"
 
-    SEARCH_MENU_1 DB "1.  Search by title$"
-	SEARCH_MENU_2 DB "2.  Search by author$"
-	SEARCH_MENU_3 DB "3.  Search by genre$"
-	SEARCH_MENU_4 DB "4.  Display all$"
+    SEARCH_MENU_1 DB "1.  Search by Title$"
+	SEARCH_MENU_2 DB "2.  Search by Author$"
+	SEARCH_MENU_3 DB "3.  Search by Genre$"
+	SEARCH_MENU_4 DB "4.  Display All$"
 	SEARCH_MENU_5 DB "5.  Back to Main Menu$"
 	CONFIRM_SELECTION DB "You have select $"
 	INPUT_BOOK_TITLE DB "Please enter the book title (CAPITAL LETTER ONLY): $"
@@ -184,7 +184,9 @@
     QUANTITY_LARGER DB 0AH,0DH,"The quantity is larger than stock quantity. Please enter again. ", 0AH,0DH, "$"
     ADD_ORDER_TITLE DB 0AH,0DH,"Any other book to order or edit? (Y/N): $"
     INVALID_ORDER DB 0AH,0DH,"Invalid input. You must enter Y/N only. ", 0AH,0DH, "$"
+    ORDER_NULL_MESSAGE DB 0AH,0DH,"You have no order made. ", 0AH,0DH,"$"
     CONFIRM_ORDER_TITLE DB 0AH,0DH,"Are you sure you want to proceed order? (Y/N): $"
+    CANCEL_ORDER_MESSAGE DB 0AH,0DH,"Your order is cancelled. ", 0AH,0DH,"$"
 ;;;;;
 
 
@@ -3466,31 +3468,59 @@ MAIN ENDP
             LEA DX, NL
             INT 21H
 
+            MOV SI,0                                  ; Array index of BOOK_ORDER_QUANTITY
+            MOV CX,8                                  ; Size of Array
+            CHECK_ORDER_MADE:
+                CMP BOOK_ORDER_QUANTITY[SI],0         ; Check whether user has made any order
+                JG HAS_QUANTITY                       ; If yes, proceed to display their order and let them to proceed or cancel order
+                INC SI                                ; Move to the next book
+
+            LOOP CHECK_ORDER_MADE 
+
+            JMP ORDER_NULL_LABEL                      ; If no book ordered, jump to ORDER_NULL_LABEL
+
+            HAS_QUANTITY:
             CALL DISPLAY_ORDER
             CALL CONFIRM_ORDER
 
             CMP AL, 'N'
-            JE RESET_BOOK_QUANTITY
-            CMP AL, 'n'
-            JE RESET_BOOK_QUANTITY
+            JE CANCEL_ORDER_LABEL                     ; If user enter 'N'  or 'n' to cancel their order, 
+            CMP AL, 'n'                               ; jump to CANCEL_ORDER_LABEL 
+            JE CANCEL_ORDER_LABEL
+
+            JMP PAYMENT_LABEL                         ; If user enter 'Y' or 'y' to proceed, jump to PAYMENT_LABEL
+
+            CANCEL_ORDER_LABEL:
+                MOV AH,09H
+                LEA DX, CANCEL_ORDER_MESSAGE
+                INT 21H
+
+                JMP RESET_BOOK_QUANTITY
 
             ;LINK PAYMENT FUNCTION HERE
-                CALL PAYMENT_FUNCTION_MAIN
+            PAYMENT_LABEL:
+                CALL PAYMENT_FUNCTION_MAIN            ; If user enter 'Y' or 'y' to confirm order will call payment function
             ;;;;;
 
             RESET_BOOK_QUANTITY:
-
                 MOV SI,0
                 MOV CX,8
                 RESET_LOOP:
-                    MOV BOOK_ORDER_QUANTITY[SI], 0        ; Set the quantity to 0
+                    MOV BOOK_ORDER_QUANTITY[SI], 0        ; Initialize each book order quantity to 0
                     MOV AL,BOOK_ORDER_QUANTITY[SI]
                     INC SI                                ; Move to the next book
 
                 LOOP RESET_LOOP 
 
-            
-        RET
+                JMP RETURN_FROM_CREATE
+
+        ORDER_NULL_LABEL:
+            MOV AH,09H
+            LEA DX,ORDER_NULL_MESSAGE                     ; Display message when all order book quantity is 0
+            INT 21H
+
+        RETURN_FROM_CREATE:
+            RET
     CREATE_ORDER_FUNCTION_MAIN ENDP
 
 
@@ -3515,87 +3545,92 @@ MAIN ENDP
         BOOK_LIST:
             ; Print the book number
             
-            MOV AH, 02H          ; DOS interrupt to print character
-            MOV DL, BOOK_NO           ; Load the book number into DL
+            MOV AH, 02H          
+            MOV DL, BOOK_NO           
             ADD DL, 30H          ; Convert number to ASCII (1 - 8)
             INT 21H
 
-            INC BOOK_NO
-            ; Print a period and space after the number
+            INC BOOK_NO          ; Increase book no.
+
+            ; Print dot and space after the number
             MOV AH,09H
             LEA DX,DOT
             INT 21H
 
             ; Print the book name
-            MOV AH, 09H          ; print string
-            MOV DX, BOOK[SI]     ; Load the string address into DX
+            MOV AH, 09H                      ; print string
+            MOV DX, BOOK[SI]                 ; Load the book string address into DX
             INT 21H
             
-            FLD DWORD PTR [PRICE[DI]]  ; Load num1 into the FPU stack
-            FILD WORD PTR [factor] ; Load factor
+            FLD DWORD PTR [PRICE[DI]]        ; Load num1 into the FPU stack
+            FILD WORD PTR [factor]           ; Load factor
             FMUL
-            FISTP result          ; Store integer part in result
+            FISTP result                     ; Store integer part in result
             
-            CALL DISPF
+            CALL DISPF                       ; Call display price function
 
-            MOV AH, 09H          ; print string
+            MOV AH, 09H                      ; Print space after price
             LEA DX, QUANTITY_COLUMN_SPACE
             INT 21H
 
-            CALL DISPLAY_QUANTITY
+            CALL DISPLAY_QUANTITY            ; Call DISPLAY_QUANTITY
 
-            MOV AH, 09H          ; print string
+            MOV AH, 09H
             LEA DX, NL
             INT 21H
 
-            ADD SI, 2            ; Move to the next pointer (each is 2 bytes)
-            ADD DI,4
+            ADD SI, 2                        ; Move to the next BOOK (each is 2 bytes)
+            ADD DI,4                         ; Move to the next PRICE (each is 4 bytes)
         LOOP BOOK_LIST
-        RET
+
+        RET                                  ; Return
     DISPLAY_BOOK_LIST ENDP
 
 
     DISPLAY_QUANTITY PROC
         ; Display left quantity
-        MOV AX, LeftQuantity[SI]
-        CALL PRINT_INT
-        RET
+        MOV AX, LeftQuantity[SI]             ; SI is the current index of the BOOK, and also represent the index of LeftQuantity 
+        CALL PRINT_INT                       ; Call PRINT_INT to print left quantity
+        RET                                  ; Return
     DISPLAY_QUANTITY ENDP
 
 
     PRINT_INT PROC
-        ; Print a 16-bit integer in AX
+        ; Preserve value of the following register onto a stack
         PUSH DX
         PUSH BX
         PUSH CX
 
-        MOV CX, 0         ; Clear CX (digit count)
+        MOV CX, 0                            ; Clear CX (digit count)
         MOV BH, 0
-        MOV BL, TEN        ; Base 10 for decimal numbers
+        MOV BL, TEN                          ; Move value 10 to BL
 
         PRINT_LOOP:
-            MOV DX, 0         ; Clear DX
-            DIV BX             ; Divide AX by 10, quotient in AX, remainder in DX
-            PUSH DX            ; Push remainder (digit) onto stack
-            INC CX             ; Increment digit count
-            TEST AX, AX        ; Check if quotient is zero
-            JNZ PRINT_LOOP     ; If not, continue loop
+            MOV DX, 0                        ; Clear DX
+            DIV BX                           ; Divide AX by 10, quotient in AX, remainder in DX
+            PUSH DX                          ; Push remainder (digit) onto stack
+            INC CX                           ; Increment digit count
+            CMP AX, 0                        ; Check if quotient is zero
+            JNZ PRINT_LOOP                   ; If not, continue loop
 
         PRINT_DIGITS:
-            POP DX             ; Get the last digit
-            ADD DL, 30H        ; Convert to ASCII
-            MOV AH, 02H        ; Print character
+            POP DX                           ; Get the last digit
+            MOV AH, 02H                      ; Print character
+            ADD DL, 30H                      ; Convert to ASCII
             INT 21H
-            LOOP PRINT_DIGITS  ; Repeat for all digits
+            LOOP PRINT_DIGITS                ; Repeat for all digits
 
-            POP CX
-            POP BX
-            POP DX
-            RET
+        ; Retrive back the value to the following register
+        POP CX
+        POP BX
+        POP DX
+
+        RET                                  ; Return
     PRINT_INT ENDP
 
 
     GET_BOOK_OPTION PROC
+        ; Display message
         MOV AH,09H
         LEA DX,ORDER_INPUT_TITLE
         INT 21H
@@ -3603,8 +3638,8 @@ MAIN ENDP
         ; Prompt user to enter a book option
         MOV AH, 01H
         INT 21H
-        SUB AL, 30H
-        MOV OPTION, AL
+        SUB AL, 30H                         ; To input digit
+        MOV OPTION, AL                      ; Move the input option to OPTION variable
 
         ; Validate the input (should be between 1 and 8)
         CMP OPTION, 1
@@ -3612,18 +3647,18 @@ MAIN ENDP
         CMP OPTION, 8
         JG INVALID_OPTION_INPUT
 
-        MOV AL, OPTION      ; Move option to AL
-        DEC AL              ; Subtract 1 (since options are 1-based, array is 0-based)
+        MOV AL, OPTION                      ; Move option to AL
+        DEC AL                              ; Subtract 1 (since options are 1-based, array is 0-based)
         MOV AH, 0
         MOV BX,AX
-        MOV SI, BX          ; Move to SI (index)
-        MOV ORDER_QUANTITY_ARRAY_INDEX, BL
-        SHL SI, 1           ; Multiply by 2 to get correct offset (each entry is 2 bytes)
+        MOV SI, BX                          ; Move to SI (index)
+        MOV ORDER_QUANTITY_ARRAY_INDEX, BL  ; Move to ORDER_QUANTITY_ARRAY_INDEX for respective book
+        SHL SI, 1                           ; Multiply by 2 to get correct offset (each entry is 2 bytes)
         
         MOV DI, 0           
         MOV CX,8
         FIND_QUANTITY_LABEL:
-            CMP BX,DI
+            CMP BX,DI                       ; Compare array of book order quantity which match the book
             JE GET_BOOK_OPTION_END
             INC DI
         LOOP FIND_QUANTITY_LABEL
@@ -3636,79 +3671,88 @@ MAIN ENDP
             JMP GET_BOOK_OPTION
 
         GET_BOOK_OPTION_END:
-            RET
+            RET                             ; Return
     GET_BOOK_OPTION ENDP
 
 
     GET_QUANTITY PROC
+        ; Display prompt to enter quantity for selected book
         MOV AH,09H
         LEA DX,BOOK_QUANTITY_TITLE1
         INT 21H
 
+        ; Display the respective book
         MOV AH,09H
         MOV DX,BOOK[SI]
         INT 21H
 
+        ; Display the end of the message
         MOV AH,09H
         LEA DX,BOOK_QUANTITY_TITLE2
         INT 21H
 
+        ; Wait for first digit of quantity input
         MOV AH,01H
         INT 21H
         SUB AL,30H
         MOV QUANTITY_INPUT,AL
 
+        ; First digit of quantity must between 0 - 9
         CMP QUANTITY_INPUT,0
         JL INVALID_QUANTITY_INPUT
 
         CMP QUANTITY_INPUT,9
         JG INVALID_QUANTITY_INPUT
 
+        ; Wait for second digit of quantity input
         MOV AH,01H
         INT 21H
 
-        CMP AL, 0DH   ; Check if user pressed ENTER KEY
-        JE KEY_IN_QUANTITY_LABEL
+        CMP AL, 0DH                                ; Check if user pressed ENTER KEY
+        JE KEY_IN_QUANTITY_LABEL                   ; If yes, means quantity is 1 digit only
         
-        SUB AL,30H
-        CMP AL,0
-        JL INVALID_QUANTITY_INPUT
+        SUB AL,30H                                 ; If ENTER KEY is not pressed, covvert to number
+        CMP AL,0                                   ; Second digit of quantity must between 0 - 9
+        JL INVALID_QUANTITY_INPUT                  ; If invalid, jump to INVALID_QUANTITY_INPUT
 
         CMP AL,9
         JG INVALID_QUANTITY_INPUT
         
-        MOV BL, AL
-        MOV AL, QUANTITY_INPUT
+        MOV BL, AL                                 ; Move second digit to BL
+        MOV AL, QUANTITY_INPUT                     ; Move QUANTITY_INPUT to AL
 
-        MUL TEN       ; multiply the previous value with 10
+        MUL TEN                                    ; Multiply AL(first digit) with 10
 
-        ADD AL, BL   ; previous value + new value ( after previous value is multiplyed with 10 )
-        MOV QUANTITY_INPUT, AL
+        ADD AL, BL                                 ; first digit + second digit ( after first digit is multiplyed with 10 )
+        MOV QUANTITY_INPUT, AL                     ; If 2 digit, QUANTITY_INPUT = first digit * 10 + second digit
         
         KEY_IN_QUANTITY_LABEL:
             MOV BX,0
             MOV BL,QUANTITY_INPUT
-            CMP BX, LeftQuantity[SI]
+            CMP BX, LeftQuantity[SI]               ; Check if quantity input exceeds available stock
             JG QUANTITY_LARGER_LABEL
 
+            ; Update the book order quantity
             MOV AX,0
             MOV AL,ORDER_QUANTITY_ARRAY_INDEX
             MOV BL,QUANTITY_INPUT
             MOV DI,AX
-            MOV BOOK_ORDER_QUANTITY[DI],BL
+            MOV BOOK_ORDER_QUANTITY[DI],BL         ; The quantity input is now stored in respective BOOK_ORDER_QUANTITY
             JMP GET_QUANTITY_END
 
         INVALID_QUANTITY_INPUT:
+        ; Display error for invalid quantity input
             MOV AH,09H
             LEA DX,INVALID_QUANTITY
             INT 21H
-            JMP GET_QUANTITY
+            JMP GET_QUANTITY                       ; Jump back to the function and ask user enter again
 
         QUANTITY_LARGER_LABEL:
+        ; Display error for exceeding available quantity
             MOV AH,09H
             LEA DX,QUANTITY_LARGER
             INT 21H
-            JMP GET_QUANTITY
+            JMP GET_QUANTITY                       ; Jump back to the function and ask user enter again
 
         GET_QUANTITY_END:
             RET
@@ -3716,14 +3760,16 @@ MAIN ENDP
 
 
     ASK_ADD_ORDER PROC
+        ; Ask the user if they want to add more orders
         MOV AH, 09H
         LEA DX, ADD_ORDER_TITLE
         INT 21H
 
+        ; Wait for user's input
         MOV AH,01H
         INT 21H
 
-        CMP AL,'Y'
+        CMP AL,'Y'                                 ; Only Y,y,N,n are accepted
         JE ASK_ADD_ORDER_END
         CMP AL,'y'
         JE ASK_ADD_ORDER_END
@@ -3732,11 +3778,11 @@ MAIN ENDP
         CMP AL,'n'
         JE ASK_ADD_ORDER_END
 
-        ; If invalid input
+        ; If invalid input, display invalid message
         MOV AH,09H
         LEA DX,INVALID_ORDER
         INT 21H
-        JMP ASK_ADD_ORDER
+        JMP ASK_ADD_ORDER                          ; Jump back to the function and ask user to enter again
 
         ASK_ADD_ORDER_END:
             RET
@@ -3749,13 +3795,13 @@ MAIN ENDP
         LEA DX,NL
         INT 21H
 
-        CALL DISPLAY_DASH
+        CALL DISPLAY_DASH                          ; Call DISPLAY_DASH for formatting
 
         MOV AH,09H
         LEA DX, COLUMN_ORDERED_HEADERS
         INT 21H
 
-        CALL DISPLAY_DASH
+        CALL DISPLAY_DASH                          ; Call DISPLAY_DASH for formatting
 
         MOV CX,8
         MOV SI,0
@@ -3763,16 +3809,18 @@ MAIN ENDP
         MOV BOOK_NO,1
         DISPLAY_ORDER_LABEL:
 
-            CMP BOOK_ORDER_QUANTITY[DI],0
-            JE NEXT
+            CMP BOOK_ORDER_QUANTITY[DI],0          ; Check if the current BOOK_ORDER_QUANTITY is zero (Only display book has ordered)
+            JE NEXT                                ; If yes, go to NEXT
 
+            ; Display the book number (1-8)
             MOV AH,02H
             MOV DL,BOOK_NO
             ADD DL,30H
             INT 21H
 
+            ; Increase book no.
             INC BOOK_NO
-            ; Print a period and space after the number
+            ; Print a dot and space after the number
             MOV AH,09H
             LEA DX,DOT
             INT 21H
@@ -3781,17 +3829,17 @@ MAIN ENDP
             MOV DX,BOOK[SI]
             INT 21H
 
-            MOV AX,0
+            MOV AX,0                               ; Since BOOK_ORDER_QUANTITY is 2 digit, need to divide 10
             MOV AL,BOOK_ORDER_QUANTITY[DI]
             DIV TEN
             MOV BX,AX
 
-            MOV AH,02H
+            MOV AH,02H                             ; Display first digit of quantity
             MOV DL,BL
             ADD DL,30H
             INT 21H
 
-            MOV AH,02H
+            MOV AH,02H                             ; Display second digit of quantity
             MOV DL,BH
             ADD DL,30H
             INT 21H
@@ -3801,22 +3849,24 @@ MAIN ENDP
             INT 21H
 
             NEXT:
-                ADD SI,2
-                INC DI
+                ADD SI,2                           ; Go to next BOOK
+                INC DI                             ; Go to next BOOK_ORDER_QUANTITY
         LOOP DISPLAY_ORDER_LABEL
         RET
     DISPLAY_ORDER ENDP
 
 
     CONFIRM_ORDER PROC
+        ; Display the confirmation prompt
         MOV AH,09H
         LEA DX, CONFIRM_ORDER_TITLE
         INT 21H
 
+        ; Wait for user input
         MOV AH,01H
         INT 21H
         
-        CMP AL,'Y'
+        CMP AL,'Y'                                   ; Only Y,y,N,n are accepted
         JE CONFIRM_ORDER_END
         CMP AL,'y'
         JE CONFIRM_ORDER_END
@@ -3829,7 +3879,7 @@ MAIN ENDP
         MOV AH,09H
         LEA DX,INVALID_ORDER
         INT 21H
-        JMP CONFIRM_ORDER
+        JMP CONFIRM_ORDER                            ; Jump back to CONFIRM_ORDER function to enter again
         
         CONFIRM_ORDER_END:
             RET
