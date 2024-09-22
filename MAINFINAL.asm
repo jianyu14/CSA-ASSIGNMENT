@@ -4928,35 +4928,35 @@ MAIN ENDP
         RPTMENU_LOOP:
 
         ;display menu
-        CALL DISPLAYMENU
+        CALL DISPLAYMENU ;display choices for the report menu
 
         ;get user input
-        CALL GETINPUT
+        CALL GETINPUT  
 
         ;check input
         CMP REPORTCHOICE,1
-        JNE CHECK_CHOICE2
-        CALL VIEWTOTALSALESREPORT
-        JMP RPTMENU_LOOP  ; Ensure return to menu loop
+        JNE CHECK_CHOICE2  ; if not equal to 1, jump to check_choice2
+        CALL VIEWTOTALSALESREPORT ;if equal 1, call procedure to total sales report
+        JMP RPTMENU_LOOP  ;return to menu loop
 
     CHECK_CHOICE2:
         CMP REPORTCHOICE,2
-        JNE CHECK_CHOICE3
-        CALL VIEWINVENTORYREPORT
-        JMP RPTMENU_LOOP  ; Ensure return to menu loop
+        JNE CHECK_CHOICE3 ; if not equal to 2, jump to check_choice3
+        CALL VIEWINVENTORYREPORT ; if equal 2, call procedure to inventory report
+        JMP RPTMENU_LOOP  ;return to menu loop
 
     CHECK_CHOICE3:
         CMP REPORTCHOICE,3
-        JE EXITMENU
-        ;JMP EXITMENU
+        JE EXITMENU  ; if equal 3, jump to exit menu 
+        
 
     ;INVALID_INPUT:
         ;display invalid msg
-        CALL DISPLAYINVALID
+        CALL DISPLAYINVALID ; if input is invalid, display invalid message and loop the report menu
         JMP RPTMENU_LOOP
 
     EXITMENU:
-        RET
+        RET ; return to the main menu
 
     REPORT_FUNCTION_MAIN ENDP
 
@@ -4971,10 +4971,12 @@ MAIN ENDP
         MOV AH,09H
         LEA DX,NL
         INT 21H
-        
-        MOV AH,09H
+
+	;display menu header
+        MOV AH,09H ;sets up 21H for string display
         LEA DX,REPORTMENU
         INT 21H
+
         ;TO DISPLAY NEW LINE
         MOV AH,09H
         LEA DX,NL
@@ -4984,6 +4986,7 @@ MAIN ENDP
         MOV AH,09H
         LEA DX,OPTION_TOTAL_SALES
         INT 21H
+
         ;TO DISPLAY NEW LINE
         MOV AH,09H
         LEA DX,NL
@@ -4993,6 +4996,7 @@ MAIN ENDP
         MOV AH,09H
         LEA DX,OPTION_INVENTORY
         INT 21H
+
         ;TO DISPLAY NEW LINE
         MOV AH,09H
         LEA DX,NL
@@ -5002,6 +5006,7 @@ MAIN ENDP
         MOV AH,09H
         LEA DX,OPTION_RETURN
         INT 21H
+
         ;TO DISPLAY NEW LINE
         MOV AH,09H
         LEA DX,NL
@@ -5019,10 +5024,10 @@ MAIN ENDP
 
     GETINPUT PROC
         ;INPUT
-        MOV AH,01H
-        INT 21H
-        SUB AL,30H
-        MOV REPORTCHOICE,AL
+        MOV AH,01H ; set up dos to get input from user
+        INT 21H ; trigger interrupt 21h to read a single key
+        SUB AL,30H ; convert ASCII number to digit, sub '0'
+        MOV REPORTCHOICE,AL ; store result in reportchoice
 
         RET
     GETINPUT ENDP
@@ -5071,11 +5076,11 @@ MAIN ENDP
         LEA DX,NL
         INT 21H
 
-        ; Set up loop counter for 8 books
-        MOV CX, 8
-        XOR SI, SI        ; Initialize loop counter for 8 books
-        MOV DI, 0
-        MOV BOOK_NO,1
+        
+        MOV CX, 8	; set loop counter to 8 books
+        XOR SI, SI       ; Initialize SI for index
+        MOV DI, 0 	 ; initilize DI for prices
+        MOV BOOK_NO,1	; initiliaze book number to 1
 
     NEXT_BOOK:
 
@@ -5085,8 +5090,8 @@ MAIN ENDP
             ADD DL, 30H          ; Convert number to ASCII (1 - 8)
             INT 21H
 
-            INC BOOK_NO
-            ; Print a period and space after the number
+            INC BOOK_NO  	; increment book number
+            
             MOV AH,09H
             LEA DX,DOT
             INT 21H
@@ -5105,7 +5110,7 @@ MAIN ENDP
         ADD BX, BX
 
         ;Load floating point price
-        FLD DWORD PTR [PRICE[DI]]
+        FLD DWORD PTR [PRICE[DI]]	;Call procedure to display floating-point price
         FILD WORD PTR [factor]      ; Load scaling factor
         FMUL                         ; Multiply to scale
         FISTP result    ; Store scaled value as integer in 'result'
@@ -5146,7 +5151,7 @@ MAIN ENDP
         LEA DX, NL
         INT 21H
     
-        LOOP NEXT_BOOK
+        LOOP NEXT_BOOK ; repeat for all 8 books
 
         RET
     VIEWTOTALSALESREPORT ENDP
@@ -5214,9 +5219,9 @@ MAIN ENDP
         INT 21H
 
         ; Set up loop counter for 8 books
-        MOV CX, 8
-        XOR SI, SI        ; Initialize loop counter for 8 books
-        MOV BOOK_NO,1
+        MOV CX, 8		; Initialize loop counter for 8 books
+        XOR SI, SI		; initilaze SI for indexing        
+        MOV BOOK_NO,1		; initialize book number to 1
 
     NEXT_BOOK2:
 
