@@ -5058,23 +5058,24 @@ MAIN ENDP
         INT 21H
 
         ; Display the title of the report
-        MOV AH,09H
         LEA DX,TOTAL_SALES_TITLE   
         INT 21H
 
         ;TO DISPLAY NEW LINE
-        MOV AH,09H
         LEA DX,NL
         INT 21H
+
+        CALL DISPLAY_DASH
 
         MOV AH,09H
         LEA DX,SALESRPT_HEADER   
         INT 21H
 
         ;TO DISPLAY NEW LINE
-        MOV AH,09H
         LEA DX,NL
         INT 21H
+
+        CALL DISPLAY_DASH
 
         
         MOV CX, 8	; set loop counter to 8 books
@@ -5200,23 +5201,23 @@ MAIN ENDP
         LEA DX,NL
         INT 21H
 
-        MOV AH,09H
         LEA DX,INVENTORY_TITLE
         INT 21H
 
-        ;TO DISPLAY NEW LINE
-        MOV AH,09H
         LEA DX,NL
         INT 21H
+
+        CALL DISPLAY_DASH
 
         MOV AH,09H
         LEA DX,INVENTORYRPT_HEADER 
         INT 21H
 
-        ;TO DISPLAY NEW LINE
-        MOV AH,09H
         LEA DX,NL
         INT 21H
+
+        CALL DISPLAY_DASH
+
 
         ; Set up loop counter for 8 books
         MOV CX, 8		; Initialize loop counter for 8 books
