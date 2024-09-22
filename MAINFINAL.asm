@@ -252,7 +252,7 @@
 
 ;Payment Link to Report Data
     ;Book sold quantity
-    SoldQuantity DW 10 DUP(00)
+    SoldQuantity DW 13, 10, 20, 15, 30, 35, 40, 45
 ;;;;;
 
 
