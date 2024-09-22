@@ -46,28 +46,28 @@
 
 
 ;Book Price(Floating number)
-    WhispersP    DD 10.5
-    EchP         DD 25.3
-    LocketP      DD 16.0
-    WillowP      DD 17.9
-    RendezvousP  DD 10.5
-    CrimsonP     DD 12.2
-    ShadowsP     DD 13.0
-    MemoriesP    DD 15.4
+    ;Whispers - 10.5
+    ;Echo - 25.3
+    ;Locket - 16.0
+    ;Willow - 17.9
+    ;Rendezvous - 10.5
+    ;Crimson - 12.2
+    ;Shadows - 13.0
+    ;Memories - 15.4
 
     Price DD 10.5,25.3,16.0,17.9,10.5,12.2,13.0,15.4
 ;;;;;
 
 
 ;Book left quantity
-    WhispersQ    DW 155
-    EchQ         DW 288
-    LocketQ      DW 123
-    WillowQ      DW 262
-    RendezvousQ  DW 165
-    CrimsonQ     DW 256
-    ShadowsQ     DW 278
-    MemoriesQ    DW 132
+    ;Whispers - 155
+    ;Echo - 288
+    ;Locket - 123
+    ;Willow - 262
+    ;Rendezvous - 165
+    ;Crimson - 256
+    ;Shadows - 278
+    ;Memories - 132
 
     LeftQuantity DW 155,288,123,262,165,256,278,132
 ;;;;;
@@ -94,12 +94,6 @@
 
 	GENRE DW OFFSET ROMANCE, OFFSET HORROR, OFFSET ADVENTURE, OFFSET EDUCATION, OFFSET ROMANCE
             DW OFFSET NON_FICTION, OFFSET HORROR, OFFSET ROMANCE
-
-	;H1 DB "Horror$"
-    ;R1 DB "Romance$"
-    ;A1 DB "Adventure$"
-    ;N1 DB "Non-fiction$"
-    ;EDUC DB "Education$"
 
     GENRE_DISPLAY DW OFFSET HORROR, OFFSET ROMANCE, OFFSET ADVENTURE
                     DW OFFSET NON_FICTION, OFFSET EDUCATION
@@ -266,7 +260,6 @@
     INAVLIDMSG DB "Invalid Choice, Try Again.$"
     TOTAL_SALES_TITLE DB 0AH,0DH,"                              TOTAL SALES REPORT",0AH,0DH,"$"
     INVENTORY_TITLE DB 0AH,0DH,"                                INVENTORY REPORT",0AH,0DH,"$"
-    ;BUFFER      DB 6 DUP (?)  ; Buffer to store the ASCII digits
     SALESRPT_HEADER DB "No. Title         Price(RM)      Sold Quantity     Total(RM)$"
     INVENTORYRPT_HEADER DB "No. Title           Stock Quantity$"
     SPACE_PREFIX DB "             $"
@@ -395,6 +388,7 @@ MAIN ENDP
 
 
 
+
 ;LOGIN_FUNCTION
     LOGIN_FUNCTION PROC
 
@@ -429,24 +423,43 @@ MAIN ENDP
 
             MOV SI,0
             LOOP_INPUT_PASS:
-            
+                XOR AX,AX
+
                 MOV AH,07H
                 INT 21H
 
-                MOV USER_PASS[SI],AL   
+                CMP AL,08H                      ;Check if Backspace is pressed (08h in ASCII)
+                JE BACKSPACE                    ;If enter is pressed, then jump to handle the backspace
 
-                CMP AL, 0DH                         ;Check if Enter is pressed (0Dh in ASCII)
-                JE END_OF_PASS_INPUT                ;If enter is pressed, then end the input loop
+                CMP AL, 0DH                     ;Check if Enter is pressed (0Dh in ASCII)
+                JE END_OF_PASS_INPUT            ;If enter is pressed, then end the input loop
+
+                MOV USER_PASS[SI],AL            ;Mov user input into the password array
 
                 MOV AH,02H  
-                MOV DL,'*'
+                MOV DL,'*'                      ;Display a '*' after each password input
                 INT 21H  
+                INC SI          
+                JMP LOOP_INPUT_PASS
 
-                INC SI
+
+                BACKSPACE:
+                    CMP SI, 0                   ;If we are at the beginning, ignore the backspace
+                    JE LOOP_INPUT_PASS  
+
+                    MOV AH, 02H
+                    MOV DL, 08H                 ;Backspace
+                    INT 21H
+                    MOV DL, ' '                 ;Print a space to erase the character
+                    INT 21H
+                    MOV DL, 08H                 ;Move the cursor back again
+                    INT 21H
+                    DEC SI                      ;Decrease the SI to move the index back
+
             JMP LOOP_INPUT_PASS
 
             END_OF_PASS_INPUT:
-            MOV INPUT_PASS_LENGTH,SI
+            MOV INPUT_PASS_LENGTH,SI            ;Mov the user input password's length into a variable
 
             MOV AH,09H
             LEA DX,NL
@@ -553,6 +566,7 @@ MAIN ENDP
 
     LOGIN_FUNCTION ENDP
 ;;;;;
+
 
 
 
@@ -4917,6 +4931,8 @@ MAIN ENDP
         RET
     ORDER_CONFIRMATION ENDP
 ;;;;;PAYMENT FUNCTION END
+
+
 
 
 
